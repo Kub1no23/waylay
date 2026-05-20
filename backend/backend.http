@@ -1,6 +1,25 @@
 @backend_HostAddress = http://localhost:5044
 
-GET {{backend_HostAddress}}/weatherforecast/
+GET {{backend_HostAddress}}/api/auth/test
 Accept: application/json
 
 ###
+
+POST {{backend_HostAddress}}/api/auth/login
+Content-Type: application/json
+{
+  "username": "test",
+  "password": "123"
+}
+
+### Testování funkčnosti Auth Controlleru
+GET {{backend_HostAddress}}/api/auth/test
+Accept: application/json
+
+### Testování Login endpointu (připojení do GCP Cloud SQL)
+POST {{backend_HostAddress}}/api/auth/login
+Content-Type: application/json
+{
+  "email": "test@talentmatch.cz",
+  "password": "SuperTajnyHeslo123"
+}
