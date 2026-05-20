@@ -5,11 +5,11 @@ steps:
       'build',
       '-t',
       '${_ARTIFACT_REGISTRY_URL}/api:${COMMIT_SHA}',
-      './api'
+      './backend'
     ]
   - name: 'gcr.io/cloud-builders/docker'
     id: 'docker push'
-    args: ['push', '-a', '${_ARTIFACT_REGISTRY_URL}/api']
+    args: ['push', '-a', '${_ARTIFACT_REGISTRY_URL}/backend']
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'deploy to cloud run'
     entrypoint: gcloud
@@ -17,9 +17,9 @@ steps:
       [
         'run',
         'deploy',
-        'api',
+        'backend',
         '--image',
-        '${_ARTIFACT_REGISTRY_URL}/api:${COMMIT_SHA}',
+        '${_ARTIFACT_REGISTRY_URL}/backend:${COMMIT_SHA}',
         '--region',
         'europe-west3',
         '--platform',
@@ -30,7 +30,7 @@ steps:
       ]
 
 images:
-  - '${_ARTIFACT_REGISTRY_URL}/api:${COMMIT_SHA}'
+  - '${_ARTIFACT_REGISTRY_URL}/baceknd:${COMMIT_SHA}'
 
 options:
   logging: CLOUD_LOGGING_ONLY
