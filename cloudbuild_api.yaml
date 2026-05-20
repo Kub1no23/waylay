@@ -1,15 +1,22 @@
-steps:  
+steps:
   - name: 'gcr.io/cloud-builders/docker'
     id: 'build docker package'
-    args: [
-      'build',
-      '-t',
-      '${_ARTIFACT_REGISTRY_URL}/backend:${COMMIT_SHA}',
-      './backend'
-    ]
+    args:
+      [
+        'build',
+        '-t',
+        '${_ARTIFACT_REGISTRY_URL}/backend:${COMMIT_SHA}',
+        './backend'
+      ]
+
   - name: 'gcr.io/cloud-builders/docker'
     id: 'docker push'
-    args: ['push', '-a', '${_ARTIFACT_REGISTRY_URL}/backend']
+    args:
+      [
+        'push',
+        '${_ARTIFACT_REGISTRY_URL}/backend:${COMMIT_SHA}'
+      ]
+
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'deploy to cloud run'
     entrypoint: gcloud
@@ -25,7 +32,7 @@ steps:
         '--platform',
         'managed',
         '--set-env-vars',
-        'PROJECT_NUMBER=${PROJECT_NUMBER},PROJECT_ID=${_PROJECT_ID}',        
+        'PROJECT_NUMBER=${PROJECT_NUMBER},PROJECT_ID=${_PROJECT_ID}',
         '--allow-unauthenticated'
       ]
 
