@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "../ui/Button";
 import { Menu, X } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -10,11 +11,11 @@ export default function Header() {
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
         {/* Logo */}
         <div className="flex lg:flex-1">
-          <a href="/" className="-m-1.5 p-1.5">
+          <Link to="/" className="-m-1.5 p-1.5">
             <span className="font-sans text-2xl font-bold tracking-tight text-primary">
               WayLay
             </span>
-          </a>
+          </Link>
         </div>
 
         {/* Mobile menu button */}
@@ -35,30 +36,30 @@ export default function Header() {
 
         {/* Desktop navigation */}
         <div className="hidden lg:flex lg:gap-x-10">
-          <a
-            href="#how-it-works"
+          <Link
+            to="#how-it-works"
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             How It Works
-          </a>
-          <a
-            href="#features"
+          </Link>
+          <Link
+            to="#features"
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             For Businesses
-          </a>
-          <a
-            href="#matching"
+          </Link>
+          <Link
+            to="#matching"
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             Matching
-          </a>
-          <a
-            href="#testimonials"
+          </Link>
+          <Link
+            to="#testimonials"
             className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             Success Stories
-          </a>
+          </Link>
         </div>
 
         {/* Desktop CTA */}
@@ -66,7 +67,9 @@ export default function Header() {
           <Button variant="ghost" className="text-sm font-medium">
             Sign In
           </Button>
-          <Button className="text-sm font-medium">Get Started</Button>
+          <Link to="/register">
+            <Button className="text-sm font-medium">Get Started</Button>
+          </Link>
         </div>
       </nav>
 

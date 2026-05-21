@@ -5,11 +5,16 @@ import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import LandingPage from "./pages/LandingPage";
+import Register from "./pages/Register";
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <LandingPage />,
+  },
+  {
+    path: "/register",
+    element: <Register />,
   },
 ]);
 
