@@ -1,0 +1,45 @@
+## Osobní / Lokální nastavení a tajné klíče (CHRAŇ SVÁ HESLA)
+#############################################################
+# Ignorovat produkční appsettings a appsettings s hesly
+appsettings.Production.json
+appsettings.local.json
+
+# POKUD CHCEŠ UTRA AJISTIT, ŽE ŽÁDNÝ CONNECTION STRING NEUTEČE:
+# Tento řádek ignoruje hlavní appsettings. Na Git se pak dává "appsettings.Development.json" bez hesel.
+appsettings.json
+
+
+## Složky vývojových nástrojů (Řeší tvůj Permission Denied)
+#############################################################
+.vs/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+
+## Zkompilovaný kód a závislosti
+#############################################################
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+bld/
+
+
+## Balíčky (NuGet)
+#############################################################
+*.nuget.exe
+*.nuget.targets
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+
+## Logy a reporty
+#############################################################
+*.log
+*.log.*
