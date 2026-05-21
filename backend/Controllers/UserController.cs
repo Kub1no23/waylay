@@ -9,11 +9,11 @@ namespace backend.Controllers;
 [Authorize]
 [ApiController]
 [Route("api/[controller]")] // /api/user
-public class ProfileController : ControllerBase
+public class UserController : ControllerBase
 {
     private readonly AppDbContext _context;
 
-    public ProfileController(AppDbContext context)
+    public UserController(AppDbContext context)
     {
         _context = context;
     }
