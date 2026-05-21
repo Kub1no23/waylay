@@ -1,25 +1,76 @@
 @backend_HostAddress = http://localhost:5044
 
-GET {{backend_HostAddress}}/api/auth/test
-Accept: application/json
-
-###
-
-POST {{backend_HostAddress}}/api/auth/login
-Content-Type: application/json
-{
-  "username": "test",
-  "password": "123"
-}
-
 ### Testování funkčnosti Auth Controlleru
 GET {{backend_HostAddress}}/api/auth/test
 Accept: application/json
 
-### Testování Login endpointu (připojení do GCP Cloud SQL)
+### 1. REGISTRACE KANDIDÁTA (Pouze povinná pole)
+POST {{backend_HostAddress}}/api/auth/register/candidate
+Content-Type: application/json
+{
+  "email": "kandidat.min@test.cz",
+  "password": "SuperHeslo123",
+  "firstName": "Jakub",
+  "lastName": "Novák"
+}
+
+### 2. REGISTRACE KANDIDÁTA (Kompletní data se všemi profily)
+POST {{backend_HostAddress}}/api/auth/register/candidate
+Content-Type: application/json
+{
+  "email": "kandidat.full@test.cz",
+  "password": "SecurePassword456",
+  "firstName": "Martin",
+  "lastName": "Dvořák",
+  "location": "Praha, Česko",
+  "headline": "Junior .NET Developer",
+  "summary": "Student IT se zájmem o backend, C# a cloudové architektury v Azure.",
+  "githubUrl": "https://github.com/jakub",
+  "portfolioUrl": "https://jakub.dev"
+}
+
+### 3. REGISTRACE FIRMY (Pouze povinná pole)
+POST {{backend_HostAddress}}/api/auth/register/company
+Content-Type: application/json
+{
+  "email": "firma.min@test.cz",
+  "password": "FirmovniHeslo123",
+  "name": "TechStart s.r.o."
+}
+
+### 4. REGISTRACE FIRMY (Kompletní data)
+POST {{backend_HostAddress}}/api/auth/register/company
+Content-Type: application/json
+{
+  "email": "hr@commerzbank.cz",
+  "password": "CommerzPassword789",
+  "name": "Commerzbank AG",
+  "headquarters": "Frankfurt, Německo",
+  "address": "Václavské náměstí, Praha",
+  "industry": "Banking & IT",
+  "description": "Mezinárodní bankovní dům s technologickým centrem v Praze."
+}
+
+### 5. LOGIN – KANDIDÁT
+# @name loginCandidate
 POST {{backend_HostAddress}}/api/auth/login
 Content-Type: application/json
 {
-  "email": "test@talentmatch.cz",
-  "password": "SuperTajnyHeslo123"
+  "email": "kandidat.min@test.cz",
+  "password": "SuperHeslo123"
 }
+
+### 6. LOGIN – FIRMA
+# @name loginCompany
+POST {{backend_HostAddress}}/api/auth/login
+Content-Type: application/json
+{
+  "email": "hr@commerzbank.cz",
+  "password": "CommerzPassword789"
+}
+
+### 7. TEST CHRÁNĚNÉHO ENDPOINTU (Built-in Middleware test)
+# Do Authorization hlavičky si po úspěšném loginu vlož vygenerovaný JWT token
+GET {{backend_HostAddress}}/api/dashboard/secure-data
+Authorization: Bearer {{loginCandidate.response.body.jwt}}
+Accept: application/json

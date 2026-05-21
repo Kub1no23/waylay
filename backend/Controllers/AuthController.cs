@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Identity.Data;
+﻿using backend.Models;
+using backend.Utils;
+using backend.Utils.DTO;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using backend.Models;
 
 namespace backend.Controllers
 {
@@ -10,10 +12,12 @@ namespace backend.Controllers
     public class AuthController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IConfiguration _conf;
 
-        public AuthController(AppDbContext context)
+        public AuthController(AppDbContext context, IConfiguration conf)
         {
             _context = context;
+            _conf = conf;
         }
 
         [HttpGet("test")]
@@ -25,53 +29,95 @@ namespace backend.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest req)
         {
-            var candidate = await _context.Candidates
+            Candidate? candidate = await _context.Candidates
+                .FirstOrDefaultAsync(c => c.Email == req.Email);
+            Company? company = await _context.Companies
                 .FirstOrDefaultAsync(c => c.Email == req.Email);
 
-            if (candidate == null)
+            if (candidate == null && company == null)
             {
-                return BadRequest("Uživatel s tímto emailem neexistuje.");
+                return BadRequest("Account with this email doesn't exist");
             }
 
-            // Kontrola hesla (pro hackathon stačí porovnat string, v reálu bcrypt/argon2)
-            if (candidate.PasswordHash != req.Password)
+            string role = candidate != null ? "candidate" : "company";
+
+            if (!Auth.VerifyPassword(req.Password, role == "candidate" ? candidate!.PasswordHash : company!.PasswordHash))
             {
-                return BadRequest("Nesprávné heslo.");
+                return BadRequest("Invalid password");
             }
 
-            // TODO: Vygenerovat JWT token (pokud ho na hackathonu používáte)
+            string secretKey = _conf["Jwt:Key"]!;
+            string issuer = _conf["Jwt:Issuer"]!;
+            string audience = _conf["Jwt:Audience"]!;
+
+            string token = Auth.GenerateJwtToken(role == "candidate" ? candidate! : company!, role, secretKey, issuer, audience);
+
             return Ok(new
             {
-                message = "Přihlášení úspěšné",
-                userId = candidate.Id,
-                role = "candidate"
+                message = "Login successful",
+                jwt = token
             });
         }
 
-        //[HttpPost("register")]
-        //public async Task<IActionResult> Register([FromBody] RegisterCandidateDto req)
-        //{
-        //    // Kontrola, zda už email v databázi není
-        //    var emailExists = await _context.Candidates.AnyAsync(c => c.Email == req.Email);
-        //    if (emailExists)
-        //    {
-        //        return BadRequest("Tento email už je zaregistrovaný.");
-        //    }
+        [HttpPost("register/candidate")]
+        public async Task<IActionResult> RegisterCandidate([FromBody] CandidateRegisterRequest req)
+        {
+            bool emailExists = await _context.Candidates.AnyAsync(c => c.Email == req.Email)
+                              || await _context.Companies.AnyAsync(c => c.Email == req.Email);
 
-        //    // Vytvoření nové instance modelu
-        //    var newCandidate = new Candidate
-        //    {
-        //        Email = req.Email,
-        //        PasswordHash = req.Password,
-        //        FirstName = req.FirstName,
-        //        LastName = req.LastName
-        //    };
+            if (emailExists)
+            {
+                return BadRequest("Account with this email already exists.");
+            }
 
-        //    // Přidání do kontextu a fyzické uložení do Postgresu na GCP
-        //    _context.Candidates.Add(newCandidate);
-        //    await _context.SaveChangesAsync();
+            string hashedPassword = Auth.HashPassword(req.Password);
 
-        //    return Ok(new { message = "Registrace kandidáta proběhla úspěšně!" });
-        //}
+            var newCandidate = new Candidate
+            {
+                Email = req.Email,
+                PasswordHash = hashedPassword,
+                FirstName = req.FirstName,
+                LastName = req.LastName,
+                Location = req.Location,
+                Headline = req.Headline,
+                Summary = req.Summary,
+                GithubUrl = req.GithubUrl,
+                PortfolioUrl = req.PortfolioUrl
+            };
+
+            _context.Candidates.Add(newCandidate);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Candidate registration successful" });
+        }
+        [HttpPost("register/company")]
+        public async Task<IActionResult> RegisterCompany([FromBody] CompanyRegisterRequest req)
+        {
+            bool emailExists = await _context.Candidates.AnyAsync(c => c.Email == req.Email)
+                              || await _context.Companies.AnyAsync(c => c.Email == req.Email);
+
+            if (emailExists)
+            {
+                return BadRequest("Account with this email already exists.");
+            }
+
+            string hashedPassword = Auth.HashPassword(req.Password);
+
+            var newCompany = new Company
+            {
+                Email = req.Email,
+                PasswordHash = hashedPassword,
+                Name = req.Name,
+                Headquarters = req.Headquarters,
+                Address = req.Address,
+                Industry = req.Industry,
+                Description = req.Description
+            };
+
+            _context.Companies.Add(newCompany);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Company registration successful" });
+        }
     }
 }

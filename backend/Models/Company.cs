@@ -1,11 +1,12 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using backend.Utils;
 
 namespace backend.Models;
 
 [Table("company")]
-public class Company
+public class Company : IOwner
 {
     [Key]
     [Column("id")]
