@@ -2,7 +2,7 @@
 
 namespace backend.Utils.DTO;
 
-public class CompanyRegisterRequest
+public class CompanyAccReq
 {
     [Required(ErrorMessage = "Email is required")]
     [EmailAddress(ErrorMessage = "Invalid email format")]
@@ -28,7 +28,7 @@ public class CompanyRegisterRequest
 
     public string? Description { get; set; }
 }
-public class CandidateRegisterRequest
+public class CandidateAccReq
 {
     [Required(ErrorMessage = "Email is required")]
     [EmailAddress(ErrorMessage = "Invalid email format")]
