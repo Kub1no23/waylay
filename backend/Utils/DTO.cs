@@ -55,10 +55,31 @@ public class CandidateAccReq
 
     public string? Summary { get; set; }
 
-    [Url(ErrorMessage = "Invalid GitHub URL format.")]
+    [Url(ErrorMessage = "Invalid GitHub URL format")]
     [StringLength(500)]
     public string? GithubUrl { get; set; }
 
-    [Url(ErrorMessage = "Invalid Portfolio URL format.")]
+    [Url(ErrorMessage = "Invalid Portfolio URL format")]
     public string? PortfolioUrl { get; set; }
+}
+
+public class CreateProfileReq
+{
+    [Required(ErrorMessage = "Job title is required")]
+    [StringLength(255)]
+    public required string Title { get; set; }
+    public string? Summary { get; set; }
+    public string? Location { get; set; }
+    public string? RemotePreference { get; set; } // 'remote', 'onsite', 'hybrid'
+    public int? YearsExperience { get; set; }
+    public bool? IsActive { get; set; }
+}
+public class UpdateProfileReq
+{
+    public string? Title { get; set; }
+    public string? Summary { get; set; }
+    public string? Location { get; set; }
+    public string? RemotePreference { get; set; }
+    public int? YearsExperience { get; set; }
+    public bool? IsActive { get; set; }
 }
