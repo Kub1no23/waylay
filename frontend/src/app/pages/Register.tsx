@@ -696,6 +696,134 @@ export default function RegisterPage() {
                       placeholder="Confirm your password"
                     />
                   </div>
+
+                  {/* Additional Information (Optional) */}
+                  <details className="group rounded-lg border border-border bg-card/50">
+                    <summary className="flex cursor-pointer items-center justify-between px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/50">
+                      <span>Additional information (optional)</span>
+                      <svg
+                        className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180"
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="m6 9 6 6 6-6" />
+                      </svg>
+                    </summary>
+                    <div className="space-y-4 border-t border-border px-4 py-4">
+                      <div>
+                        <label
+                          htmlFor="regLocation"
+                          className="mb-1.5 block text-sm font-medium text-foreground"
+                        >
+                          Location
+                        </label>
+                        <input
+                          id="regLocation"
+                          type="text"
+                          value={candidateProfile.location}
+                          onChange={(e) =>
+                            setCandidateProfile((prev) => ({
+                              ...prev,
+                              location: e.target.value,
+                            }))
+                          }
+                          className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+                          placeholder="e.g., San Francisco, CA"
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="regHeadline"
+                          className="mb-1.5 block text-sm font-medium text-foreground"
+                        >
+                          Headline
+                        </label>
+                        <input
+                          id="regHeadline"
+                          type="text"
+                          value={candidateProfile.headline}
+                          onChange={(e) =>
+                            setCandidateProfile((prev) => ({
+                              ...prev,
+                              headline: e.target.value,
+                            }))
+                          }
+                          className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+                          placeholder="e.g., Building scalable systems at Fortune 500 companies"
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="regSummary"
+                          className="mb-1.5 block text-sm font-medium text-foreground"
+                        >
+                          Summary
+                        </label>
+                        <textarea
+                          id="regSummary"
+                          rows={3}
+                          value={candidateProfile.summary}
+                          onChange={(e) =>
+                            setCandidateProfile((prev) => ({
+                              ...prev,
+                              summary: e.target.value,
+                            }))
+                          }
+                          className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+                          placeholder="Tell companies about your experience and what you're looking for..."
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="regGithubUrl"
+                          className="mb-1.5 block text-sm font-medium text-foreground"
+                        >
+                          GitHub URL
+                        </label>
+                        <input
+                          id="regGithubUrl"
+                          type="url"
+                          value={candidateProfile.githubUrl}
+                          onChange={(e) =>
+                            setCandidateProfile((prev) => ({
+                              ...prev,
+                              githubUrl: e.target.value,
+                            }))
+                          }
+                          className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+                          placeholder="https://github.com/username"
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="regPortfolioUrl"
+                          className="mb-1.5 block text-sm font-medium text-foreground"
+                        >
+                          Portfolio URL
+                        </label>
+                        <input
+                          id="regPortfolioUrl"
+                          type="url"
+                          value={candidateProfile.portfolioUrl}
+                          onChange={(e) =>
+                            setCandidateProfile((prev) => ({
+                              ...prev,
+                              portfolioUrl: e.target.value,
+                            }))
+                          }
+                          className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+                          placeholder="https://yourportfolio.com"
+                        />
+                      </div>
+                    </div>
+                  </details>
                 </>
               ) : (
                 <>

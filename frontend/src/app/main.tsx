@@ -6,6 +6,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import LandingPage from "./pages/LandingPage";
 import Register from "./pages/Register";
+import CandidateDashboard from "./pages/CandidateDashboard";
 
 const router = createBrowserRouter([
   {
@@ -15,6 +16,10 @@ const router = createBrowserRouter([
   {
     path: "/register",
     element: <Register />,
+  },
+  {
+    path: "/candidate/dashboard",
+    element: <CandidateDashboard />, // TODO: Add auth and protect this route
   },
 ]);
 
