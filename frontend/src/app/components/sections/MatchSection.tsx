@@ -8,7 +8,6 @@ const matchFactors = [
   "Location and remote preferences",
   "Salary expectations alignment",
   "Availability timeline",
-  "Cultural fit indicators",
 ];
 
 export default function MatchSection() {
@@ -33,7 +32,7 @@ export default function MatchSection() {
             <p className="mt-4 text-lg leading-relaxed text-primary-foreground/80">
               Our proprietary matching algorithm analyzes candidate profiles
               against your job requirements to deliver a clear percentage match.
-              No guesswork—just data-driven recommendations you can trust.
+              Data-driven recommendations you can trust.
             </p>
 
             <div className="mt-8 grid sm:grid-cols-2 gap-3">
@@ -120,7 +119,7 @@ export default function MatchSection() {
                 </div>
                 <div>
                   <div className="flex justify-between text-sm mb-1">
-                    <span>Culture Alignment</span>
+                    <span>Salary alignment</span>
                     <span>78%</span>
                   </div>
                   <div className="h-2 bg-primary-foreground/20 rounded-full overflow-hidden">

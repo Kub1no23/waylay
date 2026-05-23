@@ -1,45 +1,53 @@
+import { Link } from "react-router-dom";
 import { Button } from "../ui/Button";
 import { ArrowRight, Building2, Users } from "lucide-react";
 
 export default function Hero() {
   return (
     <section className="relative overflow-hidden">
-      {/* Background pattern */}
-      <div className="absolute inset-0 -z-10">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,transparent_0%,var(--background)_50%,transparent_100%)]" />
-        <div className="absolute top-0 right-0 w-1/2 h-full bg-secondary/30" />
-      </div>
-
       <div className="mx-auto max-w-7xl px-6 py-20 sm:py-28 lg:px-8 lg:py-32">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left column - Content */}
           <div className="max-w-xl">
             <div className="inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-1.5 text-sm font-medium text-secondary-foreground mb-6">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
               </span>
               Recruitment, Reimagined
             </div>
 
             <h1 className="font-sans text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl text-balance leading-tight">
-              Discover Talent That{" "}
-              <span className="text-primary">Finds You</span>
+              Where Talent Meets{" "}
+              <span className="text-primary">Opportunity</span>
             </h1>
 
             <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
               WayLay flips recruiting on its head. Candidates showcase their
-              skills and experience, while your business searches our curated
-              talent pool to find perfect matches—all powered by intelligent %
+              skills and experience, while businesses search our curated talent
+              pool to find perfect matches. All powered by intelligent %
               matching technology.
             </p>
 
             <div className="mt-10 flex flex-col sm:flex-row gap-4">
-              <Button size="lg" className="text-base px-8">
-                Start Hiring Today
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-              <Button size="lg" variant="outline" className="text-base px-8">
+              <Link to="/register">
+                <Button size="lg" className="text-base px-8">
+                  Start Matching
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+
+              <Button
+                size="lg"
+                variant="outline"
+                className="text-base px-8"
+                onClick={() =>
+                  document.getElementById("how-it-works")?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                  })
+                }
+              >
                 See How It Works
               </Button>
             </div>
@@ -76,19 +84,19 @@ export default function Hero() {
               <div className="p-6 space-y-4">
                 {[
                   {
-                    name: "Sarah Mitchell",
-                    role: "Senior Product Designer",
+                    name: "Jakub Zlamal",
+                    role: "Junior Backend Developer",
                     match: 94,
                   },
                   {
-                    name: "James Chen",
-                    role: "Full-Stack Developer",
-                    match: 89,
+                    name: "Vit Sobisek",
+                    role: "Junior Frontend Developer",
+                    match: 91,
                   },
                   {
-                    name: "Emily Rodriguez",
-                    role: "Marketing Manager",
-                    match: 86,
+                    name: "Violet Evergarden",
+                    role: "Security Engineer",
+                    match: 87,
                   },
                 ].map((candidate, index) => (
                   <div

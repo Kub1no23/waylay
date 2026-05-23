@@ -1,5 +1,6 @@
 import { Button } from "../ui/Button";
 import { ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function CTA() {
   return (
@@ -22,21 +23,16 @@ export default function CTA() {
               and start searching our talent database.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
-              <Button
-                size="lg"
-                variant="secondary"
-                className="text-base px-8 bg-primary-foreground text-primary hover:bg-primary-foreground/90"
-              >
-                Create Business Account
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="text-base px-8 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10"
-              >
-                Schedule a Demo
-              </Button>
+              <Link to="/register">
+                <Button
+                  size="lg"
+                  variant="secondary"
+                  className="text-base px-8 bg-primary-foreground text-primary hover:bg-primary-foreground/90"
+                >
+                  Create Business Account
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
             </div>
             <p className="mt-6 text-sm text-primary-foreground/60">
               Free to get started. No credit card required.

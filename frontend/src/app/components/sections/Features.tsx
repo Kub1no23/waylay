@@ -49,7 +49,7 @@ export default function Features() {
             For Businesses
           </p>
           <h2 className="mt-3 font-sans text-3xl font-bold tracking-tight text-foreground sm:text-4xl text-balance">
-            Everything You Need to Find Top Talent
+            Everything You Need to Find Your Next Great Hire
           </h2>
           <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
             WayLay provides powerful tools designed specifically for HR teams
@@ -64,14 +64,16 @@ export default function Features() {
             {features.map((feature, index) => (
               <div
                 key={index}
-                className="relative group p-6 rounded-lg bg-card border border-border hover:border-primary/20 hover:shadow-md transition-all duration-200"
+                className="relative p-6 rounded-lg bg-card border border-border"
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-200">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <feature.icon className="h-6 w-6" />
                 </div>
+
                 <h3 className="mt-4 text-base font-semibold text-foreground">
                   {feature.title}
                 </h3>
+
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                   {feature.description}
                 </p>
