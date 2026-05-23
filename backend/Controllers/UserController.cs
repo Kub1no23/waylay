@@ -18,6 +18,28 @@ public class UserController : ControllerBase
         _context = context;
     }
 
+    [HttpGet("candidate/{id}")] // GET /api/user/candidate/:id
+    public async Task<IActionResult> GetCandidateProfileById(int id)
+    {
+        var candidate = await _context.Candidates.FindAsync(id);
+        if (candidate == null) return NotFound("Candidate not found");
+
+        var publicProfile = new
+        {
+            candidate.Id,
+            candidate.Email,
+            candidate.FirstName,
+            candidate.LastName,
+            candidate.Location,
+            candidate.Headline,
+            candidate.Summary,
+            candidate.GithubUrl,
+            candidate.PortfolioUrl
+        };
+
+        return Ok(publicProfile);
+    }
+
     [Authorize(Roles = "candidate")]
     [HttpPut("candidate")] // PUT /api/user/candidate
     public async Task<IActionResult> UpdateCandidate([FromBody] CandidateAccReq req)
@@ -48,6 +70,26 @@ public class UserController : ControllerBase
         await _context.SaveChangesAsync();
 
         return Ok(new { message = "Candidate profile updated successfully" });
+    }
+
+    [HttpGet("company/{id}")] // GET /api/user/company/:id
+    public async Task<IActionResult> GetCompanyProfileById(int id)
+    {
+        var company = await _context.Companies.FindAsync(id);
+        if (company == null) return NotFound("Company not found");
+
+        var publicProfile = new
+        {
+            company.Id,
+            company.Email,
+            company.Name,
+            company.Headquarters,
+            company.Address,
+            company.Industry,
+            company.Description
+        };
+
+        return Ok(publicProfile);
     }
 
     [Authorize(Roles = "company")]

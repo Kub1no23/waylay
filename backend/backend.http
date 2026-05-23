@@ -74,3 +74,12 @@ Content-Type: application/json
 GET {{backend_HostAddress}}/api/dashboard/secure-data
 Authorization: Bearer {{loginCandidate.response.body.jwt}}
 Accept: application/json
+
+### 8. ZÍSKAT VEŘEJNÝ PROFIL KANDIDÁTA (ID v URL)
+GET {{backend_HostAddress}}/api/user/candidate/1
+Accept: application/json
+
+
+### 9. ZÍSKAT VEŘEJNÝ PROFIL FIRMY (ID v URL)
+GET {{backend_HostAddress}}/api/user/company/1
+Accept: application/json
