@@ -13,12 +13,26 @@ import {
   SidebarMenuBadge,
   SidebarInset,
   SidebarTrigger,
+  SidebarGroup,
+  SidebarGroupLabel,
 } from "../components/ui/Sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/Avatar";
 import { Button } from "../components/ui/Button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "../components/ui/AlertDialog";
 import { CandidateProfile } from "../components/sections/candidate/CandidateProfile";
 import { CandidateSettings } from "../components/sections/candidate/CandidateSettings";
 import { CandidateInbox } from "../components/sections/candidate/CandidateInbox";
+import { ChatsView } from "../components/sections/ChatsView";
 
 // Icons
 function UserIcon({ className }: { className?: string }) {
@@ -81,6 +95,25 @@ function InboxIcon({ className }: { className?: string }) {
   );
 }
 
+function MessageSquareIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </svg>
+  );
+}
+
 function LogOutIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -102,7 +135,7 @@ function LogOutIcon({ className }: { className?: string }) {
   );
 }
 
-type Section = "profile" | "settings" | "inbox";
+type Section = "profile" | "settings" | "requests" | "chats";
 
 // Mock user data
 const mockUser = {
@@ -132,7 +165,7 @@ export const mockRequests = [
       "Hi Alex, we were impressed by your profile and would love to discuss our Senior Frontend Engineer position. We think your experience with React and TypeScript would be a great fit for our team.",
     recruiterName: "Sarah Miller",
     recruiterTitle: "Technical Recruiter",
-    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
     status: "pending" as const,
   },
   {
@@ -153,7 +186,7 @@ export const mockRequests = [
       "Hello! We are building something exciting in the FinTech space and your background caught our attention. Would you be interested in chatting about joining our engineering team?",
     recruiterName: "Mike Chen",
     recruiterTitle: "Co-founder & CTO",
-    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
+    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
     status: "pending" as const,
   },
 ];
@@ -178,7 +211,7 @@ export const mockChats = [
     lastMessage: {
       content: "Great! I'll send over the interview details shortly.",
       isFromCompany: true,
-      createdAt: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
+      createdAt: new Date(Date.now() - 30 * 60 * 1000),
     },
     unreadCount: 1,
     messages: [
@@ -230,14 +263,94 @@ interface CandidateDashboardProps {
 export default function CandidateDashboard({
   onLogout,
 }: CandidateDashboardProps) {
-  const [activeSection, setActiveSection] = useState<Section>("inbox");
+  const [activeSection, setActiveSection] = useState<Section>("requests");
+  const [requests, setRequests] = useState<Request[]>(mockRequests);
+  const [chats, setChats] = useState<Chat[]>(mockChats);
 
-  const totalUnread =
-    mockRequests.filter((r) => r.status === "pending").length +
-    mockChats.reduce((sum, chat) => sum + chat.unreadCount, 0);
+  const pendingRequests = requests.filter((r) => r.status === "pending");
+  const totalUnread = chats.reduce((sum, chat) => sum + chat.unreadCount, 0);
 
   const handleLogout = () => {
     onLogout?.();
+  };
+
+  const handleAcceptRequest = (requestId: string) => {
+    const request = requests.find((r) => r.id === requestId);
+    if (!request) return;
+
+    setRequests((prev) => prev.filter((r) => r.id !== requestId));
+
+    const newChat: Chat = {
+      id: `chat-${Date.now()}`,
+      company: request.company,
+      role: request.role,
+      recruiterName: request.recruiterName,
+      recruiterTitle: request.recruiterTitle,
+      lastMessage: {
+        content: request.message,
+        isFromCompany: true,
+        createdAt: request.createdAt,
+      },
+      unreadCount: 0,
+      messages: [
+        {
+          id: `msg-${Date.now()}`,
+          content: request.message,
+          isFromCompany: true,
+          createdAt: request.createdAt,
+        },
+      ],
+    };
+    setChats((prev) => [newChat, ...prev]);
+    setActiveSection("chats");
+  };
+
+  const handleDeclineRequest = (requestId: string) => {
+    setRequests((prev) => prev.filter((r) => r.id !== requestId));
+  };
+
+  const handleSendMessage = (chatId: string, content: string) => {
+    setChats((prev) =>
+      prev.map((chat) => {
+        if (chat.id !== chatId) return chat;
+        const newMessage = {
+          id: `msg-${Date.now()}`,
+          content,
+          isFromCompany: false,
+          createdAt: new Date(),
+        };
+        return {
+          ...chat,
+          messages: [...chat.messages, newMessage],
+          lastMessage: {
+            content,
+            isFromCompany: false,
+            createdAt: new Date(),
+          },
+        };
+      }),
+    );
+  };
+
+  const handleMarkChatAsRead = (chatId: string) => {
+    setChats((prev) =>
+      prev.map((c) => (c.id === chatId ? { ...c, unreadCount: 0 } : c)),
+    );
+  };
+
+  const getSectionTitle = () => {
+    switch (activeSection) {
+      case "requests":
+        return "Requests";
+      case "chats":
+        return "Messages";
+      case "profile":
+        return "Profile";
+      case "settings":
+        return "Settings";
+      default:
+        return "";
+    }
   };
 
   const renderContent = () => {
@@ -246,8 +359,22 @@ export default function CandidateDashboard({
         return <CandidateProfile />;
       case "settings":
         return <CandidateSettings />;
-      case "inbox":
-        return <CandidateInbox />;
+      case "requests":
+        return (
+          <CandidateInbox
+            requests={requests}
+            onAccept={handleAcceptRequest}
+            onDecline={handleDeclineRequest}
+          />
+        );
+      case "chats":
+        return (
+          <ChatsView
+            chats={chats}
+            onSendMessage={handleSendMessage}
+            onMarkAsRead={handleMarkChatAsRead}
+          />
+        );
       default:
         return null;
     }
@@ -265,46 +392,70 @@ export default function CandidateDashboard({
           </div>
         </SidebarHeader>
 
-        <SidebarContent className="px-2 py-4">
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                isActive={activeSection === "inbox"}
-                onClick={() => setActiveSection("inbox")}
-                tooltip="Inbox"
-              >
-                <InboxIcon className="size-4" />
-                <span>Inbox</span>
-              </SidebarMenuButton>
-              {totalUnread > 0 && (
-                <SidebarMenuBadge className="bg-primary text-primary-foreground">
-                  {totalUnread}
-                </SidebarMenuBadge>
-              )}
-            </SidebarMenuItem>
+        <SidebarContent className="px-2 py-2">
+          <SidebarGroup>
+            <SidebarGroupLabel>Messages</SidebarGroupLabel>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={activeSection === "requests"}
+                  onClick={() => setActiveSection("requests")}
+                  tooltip="Requests"
+                >
+                  <InboxIcon className="size-4" />
+                  <span>Requests</span>
+                </SidebarMenuButton>
+                {pendingRequests.length > 0 && (
+                  <SidebarMenuBadge className="bg-primary text-primary-foreground">
+                    {pendingRequests.length}
+                  </SidebarMenuBadge>
+                )}
+              </SidebarMenuItem>
 
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                isActive={activeSection === "profile"}
-                onClick={() => setActiveSection("profile")}
-                tooltip="Profile"
-              >
-                <UserIcon className="size-4" />
-                <span>Profile</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={activeSection === "chats"}
+                  onClick={() => setActiveSection("chats")}
+                  tooltip="Chats"
+                >
+                  <MessageSquareIcon className="size-4" />
+                  <span>Chats</span>
+                </SidebarMenuButton>
+                {totalUnread > 0 && (
+                  <SidebarMenuBadge className="bg-primary text-primary-foreground">
+                    {totalUnread}
+                  </SidebarMenuBadge>
+                )}
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
 
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                isActive={activeSection === "settings"}
-                onClick={() => setActiveSection("settings")}
-                tooltip="Settings"
-              >
-                <SettingsIcon className="size-4" />
-                <span>Settings</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
+          <SidebarGroup>
+            <SidebarGroupLabel>Account</SidebarGroupLabel>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={activeSection === "profile"}
+                  onClick={() => setActiveSection("profile")}
+                  tooltip="Profile"
+                >
+                  <UserIcon className="size-4" />
+                  <span>Profile</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={activeSection === "settings"}
+                  onClick={() => setActiveSection("settings")}
+                  tooltip="Settings"
+                >
+                  <SettingsIcon className="size-4" />
+                  <span>Settings</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
         </SidebarContent>
 
         <SidebarFooter className="border-t border-border p-2">
@@ -324,24 +475,41 @@ export default function CandidateDashboard({
                 {mockUser.email}
               </span>
             </div>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={handleLogout}
-              className="shrink-0"
-            >
-              <LogOutIcon className="size-4" />
-              <span className="sr-only">Log out</span>
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="icon-sm" className="shrink-0">
+                  <LogOutIcon className="size-4" />
+                  <span className="sr-only">Log out</span>
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Sign out</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to sign out? You will need to sign in
+                    again to access your dashboard.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleLogout}
+                    className="bg-accent text-accent-foreground hover:bg-accent/90"
+                  >
+                    Sign out
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </SidebarFooter>
       </Sidebar>
 
-      <SidebarInset>
-        <header className="flex h-14 items-center gap-4 border-b border-border px-4 lg:px-6">
+      <SidebarInset className="bg-muted/30">
+        <header className="flex h-12 items-center gap-4 border-b border-border bg-background px-4">
           <SidebarTrigger className="-ml-2" />
-          <h1 className="text-lg font-semibold text-foreground capitalize">
-            {activeSection}
+          <h1 className="text-sm font-medium text-foreground">
+            {getSectionTitle()}
           </h1>
         </header>
 

@@ -94,7 +94,6 @@ export function CandidateProfile() {
   const handleSave = async () => {
     setIsSaving(true);
     setSaveSuccess(false);
-    // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1000));
     setIsSaving(false);
     setSaveSuccess(true);
@@ -107,7 +106,7 @@ export function CandidateProfile() {
     <div className="p-4 lg:p-6">
       <div className="mx-auto max-w-2xl">
         <div className="mb-6">
-          <h2 className="text-xl font-semibold text-foreground">
+          <h2 className="text-lg font-semibold text-foreground">
             Your Profile
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -115,12 +114,12 @@ export function CandidateProfile() {
           </p>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-5">
           {/* Professional Title */}
-          <div>
+          <div className="rounded-xl bg-card border border-border p-4">
             <label
               htmlFor="title"
-              className="mb-1.5 block text-sm font-medium text-foreground"
+              className="mb-2 block text-sm font-medium text-foreground"
             >
               Professional Title
             </label>
@@ -137,10 +136,10 @@ export function CandidateProfile() {
           </div>
 
           {/* Headline */}
-          <div>
+          <div className="rounded-xl bg-card border border-border p-4">
             <label
               htmlFor="headline"
-              className="mb-1.5 block text-sm font-medium text-foreground"
+              className="mb-2 block text-sm font-medium text-foreground"
             >
               Headline
             </label>
@@ -154,16 +153,16 @@ export function CandidateProfile() {
               className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
               placeholder="A brief tagline about yourself"
             />
-            <p className="mt-1.5 text-xs text-muted-foreground">
+            <p className="mt-2 text-xs text-muted-foreground">
               A short tagline that appears below your name
             </p>
           </div>
 
           {/* Summary */}
-          <div>
+          <div className="rounded-xl bg-card border border-border p-4">
             <label
               htmlFor="summary"
-              className="mb-1.5 block text-sm font-medium text-foreground"
+              className="mb-2 block text-sm font-medium text-foreground"
             >
               Summary
             </label>
@@ -179,57 +178,58 @@ export function CandidateProfile() {
             />
           </div>
 
-          {/* Location */}
-          <div>
-            <label
-              htmlFor="location"
-              className="mb-1.5 block text-sm font-medium text-foreground"
-            >
-              Location
-            </label>
-            <input
-              id="location"
-              type="text"
-              value={profile.location}
-              onChange={(e) =>
-                setProfile((prev) => ({ ...prev, location: e.target.value }))
-              }
-              className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
-              placeholder="e.g., San Francisco, CA"
-            />
-          </div>
+          {/* Location and Remote Preference */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-xl bg-card border border-border p-4">
+              <label
+                htmlFor="location"
+                className="mb-2 block text-sm font-medium text-foreground"
+              >
+                Location
+              </label>
+              <input
+                id="location"
+                type="text"
+                value={profile.location}
+                onChange={(e) =>
+                  setProfile((prev) => ({ ...prev, location: e.target.value }))
+                }
+                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+                placeholder="e.g., San Francisco, CA"
+              />
+            </div>
 
-          {/* Remote Preference */}
-          <div>
-            <label
-              htmlFor="remotePreference"
-              className="mb-1.5 block text-sm font-medium text-foreground"
-            >
-              Work Preference
-            </label>
-            <select
-              id="remotePreference"
-              value={profile.remotePreference}
-              onChange={(e) =>
-                setProfile((prev) => ({
-                  ...prev,
-                  remotePreference: e.target.value,
-                }))
-              }
-              className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
-            >
-              <option value="remote">Remote only</option>
-              <option value="hybrid">Hybrid</option>
-              <option value="onsite">On-site</option>
-              <option value="flexible">Flexible</option>
-            </select>
+            <div className="rounded-xl bg-card border border-border p-4">
+              <label
+                htmlFor="remotePreference"
+                className="mb-2 block text-sm font-medium text-foreground"
+              >
+                Work Preference
+              </label>
+              <select
+                id="remotePreference"
+                value={profile.remotePreference}
+                onChange={(e) =>
+                  setProfile((prev) => ({
+                    ...prev,
+                    remotePreference: e.target.value,
+                  }))
+                }
+                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+              >
+                <option value="remote">Remote only</option>
+                <option value="hybrid">Hybrid</option>
+                <option value="onsite">On-site</option>
+                <option value="flexible">Flexible</option>
+              </select>
+            </div>
           </div>
 
           {/* Years of Experience */}
-          <div>
+          <div className="rounded-xl bg-card border border-border p-4">
             <label
               htmlFor="yearsExperience"
-              className="mb-1.5 block text-sm font-medium text-foreground"
+              className="mb-2 block text-sm font-medium text-foreground"
             >
               Years of Experience
             </label>
@@ -252,51 +252,52 @@ export function CandidateProfile() {
             </select>
           </div>
 
-          {/* GitHub URL */}
-          <div>
-            <label
-              htmlFor="githubUrl"
-              className="mb-1.5 block text-sm font-medium text-foreground"
-            >
-              GitHub URL
-            </label>
-            <input
-              id="githubUrl"
-              type="url"
-              value={profile.githubUrl}
-              onChange={(e) =>
-                setProfile((prev) => ({ ...prev, githubUrl: e.target.value }))
-              }
-              className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
-              placeholder="https://github.com/username"
-            />
-          </div>
+          {/* Links */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-xl bg-card border border-border p-4">
+              <label
+                htmlFor="githubUrl"
+                className="mb-2 block text-sm font-medium text-foreground"
+              >
+                GitHub URL
+              </label>
+              <input
+                id="githubUrl"
+                type="url"
+                value={profile.githubUrl}
+                onChange={(e) =>
+                  setProfile((prev) => ({ ...prev, githubUrl: e.target.value }))
+                }
+                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+                placeholder="https://github.com/username"
+              />
+            </div>
 
-          {/* Portfolio URL */}
-          <div>
-            <label
-              htmlFor="portfolioUrl"
-              className="mb-1.5 block text-sm font-medium text-foreground"
-            >
-              Portfolio URL
-            </label>
-            <input
-              id="portfolioUrl"
-              type="url"
-              value={profile.portfolioUrl}
-              onChange={(e) =>
-                setProfile((prev) => ({
-                  ...prev,
-                  portfolioUrl: e.target.value,
-                }))
-              }
-              className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
-              placeholder="https://yourportfolio.com"
-            />
+            <div className="rounded-xl bg-card border border-border p-4">
+              <label
+                htmlFor="portfolioUrl"
+                className="mb-2 block text-sm font-medium text-foreground"
+              >
+                Portfolio URL
+              </label>
+              <input
+                id="portfolioUrl"
+                type="url"
+                value={profile.portfolioUrl}
+                onChange={(e) =>
+                  setProfile((prev) => ({
+                    ...prev,
+                    portfolioUrl: e.target.value,
+                  }))
+                }
+                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+                placeholder="https://yourportfolio.com"
+              />
+            </div>
           </div>
 
           {/* Save Button */}
-          <div className="flex items-center gap-3 pt-4">
+          <div className="flex items-center gap-3 pt-2">
             <Button onClick={handleSave} disabled={isSaving || !hasChanges}>
               {isSaving ? (
                 <>

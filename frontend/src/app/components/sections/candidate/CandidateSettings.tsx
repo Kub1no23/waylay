@@ -157,11 +157,11 @@ export function CandidateSettings() {
 
   return (
     <div className="p-4 lg:p-6">
-      <div className="mx-auto max-w-2xl space-y-8">
+      <div className="mx-auto max-w-2xl space-y-6">
         {/* Account Settings */}
-        <section>
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold text-foreground">
+        <section className="rounded-xl bg-card border border-border p-5">
+          <div className="mb-5">
+            <h2 className="text-lg font-semibold text-foreground">
               Account Settings
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -169,12 +169,12 @@ export function CandidateSettings() {
             </p>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Email (read-only) */}
             <div>
               <label
                 htmlFor="email"
-                className="mb-1.5 block text-sm font-medium text-foreground"
+                className="mb-2 block text-sm font-medium text-foreground"
               >
                 Email Address
               </label>
@@ -185,24 +185,24 @@ export function CandidateSettings() {
                 readOnly
                 className="w-full cursor-not-allowed rounded-lg border border-input bg-muted px-3 py-2.5 text-sm text-muted-foreground"
               />
-              <p className="mt-1.5 text-xs text-muted-foreground">
+              <p className="mt-2 text-xs text-muted-foreground">
                 Contact support to change your email address
               </p>
             </div>
 
             {/* Notification Preferences */}
-            <div className="space-y-4">
+            <div className="space-y-3 pt-2">
               <h3 className="text-sm font-medium text-foreground">
                 Notification Preferences
               </h3>
 
-              <label className="flex items-center justify-between rounded-lg border border-border bg-card p-4">
+              <label className="flex items-center justify-between rounded-lg border border-border bg-background p-4">
                 <div>
                   <span className="block text-sm font-medium text-foreground">
                     New request notifications
                   </span>
                   <span className="block text-xs text-muted-foreground">
-                    Receive emails when companies reach out to you
+                    Receive emails when companies reach out
                   </span>
                 </div>
                 <button
@@ -229,7 +229,7 @@ export function CandidateSettings() {
                 </button>
               </label>
 
-              <label className="flex items-center justify-between rounded-lg border border-border bg-card p-4">
+              <label className="flex items-center justify-between rounded-lg border border-border bg-background p-4">
                 <div>
                   <span className="block text-sm font-medium text-foreground">
                     Message notifications
@@ -264,7 +264,7 @@ export function CandidateSettings() {
             </div>
 
             {/* Save Settings Button */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 pt-2">
               <Button onClick={handleSaveSettings} disabled={isSavingSettings}>
                 {isSavingSettings ? (
                   <>
@@ -292,13 +292,10 @@ export function CandidateSettings() {
           </div>
         </section>
 
-        {/* Divider */}
-        <div className="border-t border-border" />
-
         {/* Change Password */}
-        <section>
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold text-foreground">
+        <section className="rounded-xl bg-card border border-border p-5">
+          <div className="mb-5">
+            <h2 className="text-lg font-semibold text-foreground">
               Change Password
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -306,11 +303,11 @@ export function CandidateSettings() {
             </p>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div>
               <label
                 htmlFor="currentPassword"
-                className="mb-1.5 block text-sm font-medium text-foreground"
+                className="mb-2 block text-sm font-medium text-foreground"
               >
                 Current Password
               </label>
@@ -329,48 +326,50 @@ export function CandidateSettings() {
               />
             </div>
 
-            <div>
-              <label
-                htmlFor="newPassword"
-                className="mb-1.5 block text-sm font-medium text-foreground"
-              >
-                New Password
-              </label>
-              <input
-                id="newPassword"
-                type="password"
-                value={passwordForm.newPassword}
-                onChange={(e) =>
-                  setPasswordForm((prev) => ({
-                    ...prev,
-                    newPassword: e.target.value,
-                  }))
-                }
-                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
-                placeholder="Enter your new password"
-              />
-            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label
+                  htmlFor="newPassword"
+                  className="mb-2 block text-sm font-medium text-foreground"
+                >
+                  New Password
+                </label>
+                <input
+                  id="newPassword"
+                  type="password"
+                  value={passwordForm.newPassword}
+                  onChange={(e) =>
+                    setPasswordForm((prev) => ({
+                      ...prev,
+                      newPassword: e.target.value,
+                    }))
+                  }
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+                  placeholder="Enter new password"
+                />
+              </div>
 
-            <div>
-              <label
-                htmlFor="confirmPassword"
-                className="mb-1.5 block text-sm font-medium text-foreground"
-              >
-                Confirm New Password
-              </label>
-              <input
-                id="confirmPassword"
-                type="password"
-                value={passwordForm.confirmPassword}
-                onChange={(e) =>
-                  setPasswordForm((prev) => ({
-                    ...prev,
-                    confirmPassword: e.target.value,
-                  }))
-                }
-                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
-                placeholder="Confirm your new password"
-              />
+              <div>
+                <label
+                  htmlFor="confirmPassword"
+                  className="mb-2 block text-sm font-medium text-foreground"
+                >
+                  Confirm Password
+                </label>
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  value={passwordForm.confirmPassword}
+                  onChange={(e) =>
+                    setPasswordForm((prev) => ({
+                      ...prev,
+                      confirmPassword: e.target.value,
+                    }))
+                  }
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+                  placeholder="Confirm new password"
+                />
+              </div>
             </div>
 
             {passwordError && (
@@ -405,13 +404,10 @@ export function CandidateSettings() {
           </div>
         </section>
 
-        {/* Divider */}
-        <div className="border-t border-border" />
-
         {/* Danger Zone */}
-        <section>
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold text-destructive">
+        <section className="rounded-xl border border-destructive/30 bg-destructive/5 p-5">
+          <div className="mb-5">
+            <h2 className="text-lg font-semibold text-destructive">
               Danger Zone
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -419,7 +415,7 @@ export function CandidateSettings() {
             </p>
           </div>
 
-          <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+          <div className="rounded-lg border border-destructive/20 bg-background p-4">
             <div className="flex items-start gap-4">
               <AlertTriangleIcon className="mt-0.5 size-5 shrink-0 text-destructive" />
               <div className="flex-1">
@@ -429,7 +425,7 @@ export function CandidateSettings() {
                 <p className="mt-1 text-sm text-muted-foreground">
                   Once you deactivate your account, your profile will be hidden
                   from companies and all pending requests will be declined. You
-                  can reactivate your account at any time by logging in.
+                  can reactivate by logging in.
                 </p>
                 <Button variant="destructive" size="sm" className="mt-4">
                   Deactivate Account

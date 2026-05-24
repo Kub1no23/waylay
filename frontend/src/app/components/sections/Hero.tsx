@@ -19,7 +19,7 @@ export default function Hero() {
 
             <h1 className="font-sans text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl text-balance leading-tight">
               Where Talent Meets{" "}
-              <span className="text-primary">Opportunity</span>
+              <span className="text-accent">Opportunity</span>
             </h1>
 
             <p className="mt-6 text-lg leading-relaxed text-muted-foreground">

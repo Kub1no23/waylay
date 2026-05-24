@@ -145,7 +145,7 @@ export function CompanyProfileView({
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-border px-4 py-3 lg:px-6">
+      <div className="flex items-center gap-3 border-b border-border bg-card px-4 py-3">
         <Button
           variant="ghost"
           size="icon-sm"
@@ -166,7 +166,7 @@ export function CompanyProfileView({
           <div className="mx-auto max-w-2xl">
             {/* Company Header */}
             <div className="flex items-start gap-4">
-              <Avatar className="size-16 shrink-0">
+              <Avatar className="size-16 shrink-0 border border-border">
                 <AvatarImage src={company.logo} />
                 <AvatarFallback className="bg-muted text-muted-foreground text-xl">
                   {company.name[0]}
@@ -185,36 +185,36 @@ export function CompanyProfileView({
 
             {/* Role Badge */}
             <div className="mt-6">
-              <Badge variant="secondary" className="text-sm">
+              <Badge variant="secondary" className="text-sm px-3 py-1">
                 Hiring for: {role}
               </Badge>
             </div>
 
             {/* Company Details */}
-            <div className="mt-6 space-y-4">
-              <div className="flex items-center gap-3 text-sm">
+            <div className="mt-6 grid gap-3">
+              <div className="flex items-center gap-3 text-sm rounded-lg bg-muted/50 px-4 py-3">
                 <MapPinIcon className="size-4 shrink-0 text-muted-foreground" />
                 <span className="text-foreground">{company.location}</span>
               </div>
 
-              <div className="flex items-center gap-3 text-sm">
+              <div className="flex items-center gap-3 text-sm rounded-lg bg-muted/50 px-4 py-3">
                 <UsersIcon className="size-4 shrink-0 text-muted-foreground" />
                 <span className="text-foreground">{company.size}</span>
               </div>
 
-              <div className="flex items-center gap-3 text-sm">
+              <div className="flex items-center gap-3 text-sm rounded-lg bg-muted/50 px-4 py-3">
                 <BriefcaseIcon className="size-4 shrink-0 text-muted-foreground" />
                 <span className="text-foreground">{company.industry}</span>
               </div>
 
               {company.website && (
-                <div className="flex items-center gap-3 text-sm">
+                <div className="flex items-center gap-3 text-sm rounded-lg bg-muted/50 px-4 py-3">
                   <GlobeIcon className="size-4 shrink-0 text-muted-foreground" />
                   <a
                     href={company.website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-primary hover:underline inline-flex items-center gap-1"
+                    className="text-primary hover:underline inline-flex items-center gap-1.5"
                   >
                     {company.website.replace(/^https?:\/\//, "")}
                     <ExternalLinkIcon className="size-3" />
@@ -225,12 +225,14 @@ export function CompanyProfileView({
 
             {/* About */}
             <div className="mt-8">
-              <h3 className="text-sm font-semibold text-foreground">
+              <h3 className="text-sm font-semibold text-foreground mb-3">
                 About the Company
               </h3>
-              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                {company.description}
-              </p>
+              <div className="rounded-xl bg-card border border-border p-4">
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {company.description}
+                </p>
+              </div>
             </div>
 
             {/* Action */}
