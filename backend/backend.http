@@ -83,3 +83,18 @@ Accept: application/json
 ### 9. ZÍSKAT VEŘEJNÝ PROFIL FIRMY (ID v URL)
 GET {{backend_HostAddress}}/api/user/company/1
 Accept: application/json
+
+### 10. POSLAT ZPRÁVU (Musíš poslat platný Bearer Token kandidáta nebo firmy)
+POST {{backend_HostAddress}}/api/chat/message
+Authorization: Bearer {{token}}
+Content-Type: application/json
+{
+  "statusId": 1,
+  "content": "Ahoj, posílám první zprávu z backendu v C#!"
+}
+
+
+### 11. NAČÍST HISTORII CHATU
+GET {{backend_HostAddress}}/api/chat/1
+Authorization: Bearer {{token}}
+Accept: application/json

@@ -15,9 +15,6 @@ public class Message
     [Column("chat_id")]
     public int ChatId { get; set; }
 
-    [ForeignKey(nameof(ChatId))]
-    public Chat? Chat { get; set; }
-
     [Column("sender")]
     public int Sender { get; set; }
 
@@ -30,4 +27,7 @@ public class Message
 
     [Column("is_read")]
     public bool IsRead { get; set; } = false;
+
+    [ForeignKey(nameof(ChatId))]
+    public Chat Chat { get; set; } = null!;
 }

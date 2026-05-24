@@ -83,3 +83,8 @@ public class UpdateProfileReq
     public int? YearsExperience { get; set; }
     public bool? IsActive { get; set; }
 }
+
+public class SendMessageReq
+{
+    public string Content { get; set; } = null!;
+}

@@ -1,4 +1,5 @@
 using backend;
+using backend.Utils;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -26,6 +27,22 @@ builder.Services.AddAuthentication(options =>
         options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     }).AddJwtBearer(options =>
     {
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var path = context.HttpContext.Request.Path;
+                if (path.StartsWithSegments("/api/hub/chat"))
+                {
+                    var accessToken = context.Request.Query["access_token"];
+                    if (!string.IsNullOrEmpty(accessToken))
+                    {
+                        context.Token = accessToken;
+                    }
+                }
+                return Task.CompletedTask;
+            }
+        };
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
@@ -39,7 +56,7 @@ builder.Services.AddAuthentication(options =>
         };
     });
 builder.Services.AddAuthorization();
-
+builder.Services.AddSignalR();
 
 
 var app = builder.Build();
@@ -53,10 +70,6 @@ app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-//app.MapGet("/weatherforecast", () =>
-//{
-    
-//})
-//.WithName("GetWeatherForecast");
+app.MapHub<ChatHub>("/api/hub/chat");
 
 app.Run();
