@@ -88,3 +88,19 @@ public class SendMessageReq
 {
     public string Content { get; set; } = null!;
 }
+
+public class DeleteFlagsReq
+{
+    public List<int> FlagIds { get; set; } = new();
+}
+
+public class AssignFlagsReq
+{
+    public Dictionary<int, decimal?> Flags { get; set; } = new();
+}
+
+public class CreateFlagReq
+{
+    public required string Name { get; set; }
+    public required string Category { get; set; } // e.g. 'skill', 'trait', 'industry'
+}
