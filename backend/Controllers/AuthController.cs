@@ -63,33 +63,45 @@ namespace backend.Controllers
         [HttpPost("register/candidate")]
         public async Task<IActionResult> RegisterCandidate([FromBody] CandidateAccReq req)
         {
-            bool emailExists = await _context.Candidates.AnyAsync(c => c.Email == req.Email)
-                              || await _context.Companies.AnyAsync(c => c.Email == req.Email);
-
-            if (emailExists)
+            try
             {
-                return BadRequest("Account with this email already exists.");
+                bool emailExists = await _context.Candidates.AnyAsync(c => c.Email == req.Email)
+                                  || await _context.Companies.AnyAsync(c => c.Email == req.Email);
+
+                if (emailExists)
+                {
+                    return BadRequest("Account with this email already exists.");
+                }
+
+                string hashedPassword = Auth.HashPassword(req.Password);
+
+                var newCandidate = new Candidate
+                {
+                    Email = req.Email,
+                    PasswordHash = hashedPassword,
+                    FirstName = req.FirstName,
+                    LastName = req.LastName,
+                    Location = req.Location,
+                    Headline = req.Headline,
+                    Summary = req.Summary,
+                    GithubUrl = req.GithubUrl,
+                    PortfolioUrl = req.PortfolioUrl
+                };
+
+                _context.Candidates.Add(newCandidate);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Candidate registration successful" });
+            } catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    error = ex.Message,
+                    source = ex.Source,
+                    innerError = ex.InnerException?.Message,
+                    stackTrace = ex.StackTrace
+                });
             }
-
-            string hashedPassword = Auth.HashPassword(req.Password);
-
-            var newCandidate = new Candidate
-            {
-                Email = req.Email,
-                PasswordHash = hashedPassword,
-                FirstName = req.FirstName,
-                LastName = req.LastName,
-                Location = req.Location,
-                Headline = req.Headline,
-                Summary = req.Summary,
-                GithubUrl = req.GithubUrl,
-                PortfolioUrl = req.PortfolioUrl
-            };
-
-            _context.Candidates.Add(newCandidate);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Candidate registration successful" });
         }
         [HttpPost("register/company")]
         public async Task<IActionResult> RegisterCompany([FromBody] CompanyAccReq req)
