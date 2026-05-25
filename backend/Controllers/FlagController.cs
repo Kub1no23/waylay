@@ -4,8 +4,9 @@ using backend.Utils.DTO;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-// Nezapomeň si nainstalovat/přidat balíček pro OpenAI, pokud ho ještě nemáš (např. Azure.AI.OpenAI nebo OpenAI)
-// using Azure.AI.OpenAI; 
+using Google.Cloud.AIPlatform.V1;
+using Google.Protobuf.WellKnownTypes;
+using ProtobufValue = Google.Protobuf.WellKnownTypes.Value;
 
 namespace backend.Controllers;
 
@@ -125,7 +126,7 @@ public class FlagController : ControllerBase
         return Ok(new { message = $"{relationsToDelete.Count} flags successfully removed from profile" });
     }
 
-    [HttpGet("/api/flag")] // GET /api/flag?q=...&category=...&page=2
+    [HttpGet] // GET /api/flag?q=...&category=...&page=2
     public async Task<IActionResult> SearchFlags([FromQuery] string? q, [FromQuery] string? category, [FromQuery] int page = 1)
     {
         if (page < 1) page = 1;
@@ -173,27 +174,114 @@ public class FlagController : ControllerBase
         return Ok(response);
     }
 
-    // =========================================================================
-    // 3. Interní metoda: Generování vektoru (Text Embedding)
-    // =========================================================================
+    [AllowAnonymous]
+    [HttpPost] // POST /api/flag
+    public async Task<IActionResult> CreateGlobalFlag([FromBody] CreateFlagReq dto)
+    {
+        if (string.IsNullOrWhiteSpace(dto.Name))
+            return BadRequest("Flag name cannot be empty");
+        if (string.IsNullOrWhiteSpace(dto.Category))
+            return BadRequest("Flag category cannot be empty");
+
+        var normalizedName = dto.Name.Trim().ToLower();
+
+        var existingFlag = await _context.Flags
+            .FirstOrDefaultAsync(f => f.Name == normalizedName);
+        if (existingFlag != null)
+        {
+            return Ok(new
+            {
+                message = "Flag already exists in the database",
+                flag = new { existingFlag.Id, existingFlag.Name, existingFlag.Category }
+            });
+        }
+
+        float[] embeddingVector;
+        try
+        {
+            embeddingVector = await GenerateEmbeddingAsync(normalizedName);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = "Failed to generate semantic embedding for the flag", details = ex.Message });
+        }
+
+        var newFlag = new Flag
+        {
+            Name = normalizedName,
+            Category = dto.Category.Trim().ToLower(),
+            Embedding = new Pgvector.Vector(embeddingVector),
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        _context.Flags.Add(newFlag);
+        await _context.SaveChangesAsync();
+
+        return CreatedAtAction(nameof(SearchFlags), new { q = newFlag.Name }, new
+        {
+            message = "Flag successfully created with semantic embedding.",
+            flag = new { newFlag.Id, newFlag.Name, newFlag.Category }
+        });
+    }
+
     private async Task<float[]> GenerateEmbeddingAsync(string text)
     {
-        // TODO: Tady na hackathonu uděláte reálné volání Azure OpenAI / OpenAI API.
-        // Prozatím ti sem dávám mock, který vrací prázdné pole o správné velikosti 1536 prvků,
-        // abyste mohli testovat zbytek aplikace bez padání.
+        var projectId = _configuration["PROJECT_ID"];
+        var location = _configuration["GCP:Location"];
+        var modelName = _configuration["GCP:TextModelName"];
 
-        // Ukázka, jak by to vypadalo s oficiálním OpenAI SDK:
-        /*
-        var apiKey = _configuration["OpenAI:ApiKey"]; // Načtení z Secret Manageru
-        var client = new OpenAIClient(apiKey);
-        var options = new EmbeddingsOptions("text-embedding-3-small", new[] { text }); 
-        var response = await client.GetEmbeddingsAsync(options);
-        return response.Value.Data[0].Embedding.ToArray();
-        */
+        if (string.IsNullOrEmpty(projectId))
+        {
+            throw new Exception("GCP ProjectId is missing in configuration (PROJECT_ID)");
+        }
+        if (string.IsNullOrEmpty(location))
+        {
+            throw new Exception("GCP Location is missing in configuration (GCP:Location)");
+        }
+        if (string.IsNullOrEmpty(modelName))
+        {
+            throw new Exception("GCP TextModelName is missing in configuration (GCP:TextModelName)");
+        }
 
-        // MOCK: Vrátí pole 1536 náhodných / nulových čísel (vyhovuje podmínce VECTOR(1536) v DB)
-        float[] mockVector = new float[1536];
-        Array.Fill(mockVector, 0.01f); // Jen dummy data pro test
-        return await Task.FromResult(mockVector);
+        var clientBuilder = new PredictionServiceClientBuilder
+        {
+            Endpoint = $"{location}-aiplatform.googleapis.com"
+        };
+        PredictionServiceClient predictionServiceClient = await clientBuilder.BuildAsync();
+        var endpointName = EndpointName.FromProjectLocationPublisherModel(projectId, location, "google", modelName);
+
+        var instance = new ProtobufValue
+        {
+            StructValue = new Struct
+            {
+                Fields = { { "content", ProtobufValue.ForString(text) } }
+            }
+        };
+        // Set dimensions to 1536
+        var parameters = new ProtobufValue
+        {
+            StructValue = new Struct
+            {
+                Fields = { { "outputDimensionality", ProtobufValue.ForNumber(1536) } }
+            }
+        };
+
+        PredictResponse response = await predictionServiceClient.PredictAsync(
+            endpointName.ToString(),
+            new[] { instance },
+            parameters
+        );
+
+        var predictions = response.Predictions;
+        if (predictions == null || predictions.Count == 0)
+        {
+            throw new Exception("Vertex AI returned an empty prediction response");
+        }
+
+        var embeddingsStruct = predictions[0].StructValue.Fields["embeddings"].StructValue;
+        var valuesList = embeddingsStruct.Fields["values"].ListValue.Values;
+
+        return valuesList.Select(v => (float)v.NumberValue).ToArray();
     }
 }
