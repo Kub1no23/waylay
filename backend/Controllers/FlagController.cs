@@ -258,12 +258,12 @@ public class FlagController : ControllerBase
                 Fields = { { "content", ProtobufValue.ForString(text) } }
             }
         };
-        // Set dimensions to 1536
+        // Set dimensions to 768
         var parameters = new ProtobufValue
         {
             StructValue = new Struct
             {
-                Fields = { { "outputDimensionality", ProtobufValue.ForNumber(1536) } }
+                Fields = { { "outputDimensionality", ProtobufValue.ForNumber(768) } }
             }
         };
 
