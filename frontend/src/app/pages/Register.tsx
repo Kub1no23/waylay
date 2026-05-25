@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { cn } from "../../libs/utils";
 
-import { registerCandidate } from "../../api/auth";
+import { registerCandidate, registerCompany } from "../../api/auth";
 
 type AccountType = "candidate" | "company" | null;
 type Step =
@@ -80,26 +80,6 @@ function CheckIcon({ className }: { className?: string }) {
   );
 }
 
-function ArrowLeftIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="m12 19-7-7 7-7" />
-      <path d="M19 12H5" />
-    </svg>
-  );
-}
-
 function ArrowRightIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -146,6 +126,11 @@ interface CandidateFormData {
   confirmPassword: string;
   firstName: string;
   lastName: string;
+  location?: string;
+  headline?: string;
+  summary?: string;
+  githubUrl?: string;
+  portfolioUrl?: string;
 }
 
 interface CompanyFormData {
@@ -153,20 +138,13 @@ interface CompanyFormData {
   password: string;
   confirmPassword: string;
   companyName: string;
+  headquarters?: string;
+  address?: string;
+  industry?: string;
+  description?: string;
 }
 
-interface CandidateProfileData {
-  title: string;
-  summary: string;
-  location: string;
-  remotePreference: string;
-  yearsExperience: string;
-  headline: string;
-  githubUrl: string;
-  portfolioUrl: string;
-}
-
-interface CompanyProfileData {
+interface ProfileData {
   title: string;
   summary: string;
   location: string;
@@ -188,27 +166,28 @@ export default function RegisterPage() {
     confirmPassword: "",
     firstName: "",
     lastName: "",
+    location: "",
+    headline: "",
+    summary: "",
+    githubUrl: "",
+    portfolioUrl: "",
   });
-  const [candidateProfile, setCandidateProfile] =
-    useState<CandidateProfileData>({
-      title: "",
-      summary: "",
-      location: "",
-      remotePreference: "hybrid",
-      yearsExperience: "",
-      headline: "",
-      githubUrl: "",
-      portfolioUrl: "",
-    });
+  const [candidateProfile, setCandidateProfile] = useState<ProfileData>({
+    title: "",
+    summary: "",
+    location: "",
+    remotePreference: "hybrid",
+    yearsExperience: "",
+  });
 
   // Company data
   const [companyForm, setCompanyForm] = useState<CompanyFormData>({
+    companyName: "",
     email: "",
     password: "",
     confirmPassword: "",
-    companyName: "",
   });
-  const [companyProfile, setCompanyProfile] = useState<CompanyProfileData>({
+  const [companyProfile, setCompanyProfile] = useState<ProfileData>({
     title: "",
     summary: "",
     location: "",
@@ -247,7 +226,7 @@ export default function RegisterPage() {
 
   const validateCandidateProfile = (): string | null => {
     if (!candidateProfile.title) return "Professional title is required";
-    if (!candidateProfile.summary) return "Summary is required";
+    if (!candidateProfile.summary) return "About you is required";
     return null;
   };
 
@@ -269,8 +248,9 @@ export default function RegisterPage() {
     }
   };
 
-  const handleRegisterSubmit = async (e: React.FormEvent) => {
+  const handleRegisterSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
     setError(null);
 
     const validationError =
@@ -292,21 +272,40 @@ export default function RegisterPage() {
           password: candidateForm.password,
           firstName: candidateForm.firstName,
           lastName: candidateForm.lastName,
-
-          location: candidateProfile.location || undefined,
-          headline: candidateProfile.headline || undefined,
-          summary: candidateProfile.summary || undefined,
-          githubUrl: candidateProfile.githubUrl || undefined,
-          portfolioUrl: candidateProfile.portfolioUrl || undefined,
+          location: candidateForm.location,
+          headline: candidateForm.headline,
+          summary: candidateForm.summary,
+          githubUrl: candidateForm.githubUrl,
+          portfolioUrl: candidateForm.portfolioUrl,
         });
 
         setStep("candidate-onboarding");
-      } else {
-        // TODO: implement registerCompany
+      }
+
+      if (accountType === "company") {
+        await registerCompany({
+          name: companyForm.companyName,
+          email: companyForm.email,
+          password: companyForm.password,
+          headquarters: companyForm.headquarters,
+          address: companyForm.address,
+          industry: companyForm.industry,
+          description: companyForm.description,
+        });
+
         setStep("company-onboarding");
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Registration failed");
+    } catch (err: any) {
+      const data = err.response?.data;
+
+      const message =
+        data?.title ||
+        data?.message ||
+        (typeof data === "string" ? data : null) ||
+        err.message ||
+        "Registration failed";
+
+      setError(message);
     } finally {
       setIsLoading(false);
     }
@@ -330,7 +329,7 @@ export default function RegisterPage() {
     setIsLoading(false);
 
     // Registration complete - navigate to dashboard (placeholder)
-    navigate("/?registered=candidate");
+    navigate("/login");
   };
 
   const handleCompanyOnboardingChoice = async (choice: boolean) => {
@@ -340,7 +339,7 @@ export default function RegisterPage() {
       // Skip profile creation, go to dashboard
       setIsLoading(true);
       await new Promise((resolve) => setTimeout(resolve, 500));
-      navigate("/?registered=company");
+      navigate("/login");
     }
   };
 
@@ -362,22 +361,7 @@ export default function RegisterPage() {
     setIsLoading(false);
 
     // Registration complete - navigate to dashboard (placeholder)
-    navigate("/?registered=company");
-  };
-
-  const handleBack = () => {
-    setError(null);
-    if (step === "register-form") {
-      setStep("select-type");
-    } else if (step === "candidate-onboarding") {
-      setStep("register-form");
-    } else if (step === "company-onboarding") {
-      if (createJobProfile) {
-        setCreateJobProfile(null);
-      } else {
-        setStep("register-form");
-      }
-    }
+    navigate("/login");
   };
 
   return (
@@ -398,7 +382,10 @@ export default function RegisterPage() {
             </Link>
             <div className="text-sm text-muted-foreground">
               Already have an account?{" "}
-              <Link to="/" className="font-medium text-primary hover:underline">
+              <Link
+                to="/login"
+                className="font-medium text-primary hover:underline"
+              >
                 Sign in
               </Link>
             </div>
@@ -544,17 +531,6 @@ export default function RegisterPage() {
         {/* Step: Registration Form */}
         {step === "register-form" && (
           <div className="space-y-6">
-            <div>
-              <button
-                type="button"
-                onClick={handleBack}
-                className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-              >
-                <ArrowLeftIcon className="h-4 w-4" />
-                Back
-              </button>
-            </div>
-
             <div className="text-center">
               <div
                 className={cn(
@@ -727,9 +703,9 @@ export default function RegisterPage() {
                         <input
                           id="regLocation"
                           type="text"
-                          value={candidateProfile.location}
+                          value={candidateForm.location}
                           onChange={(e) =>
-                            setCandidateProfile((prev) => ({
+                            setCandidateForm((prev) => ({
                               ...prev,
                               location: e.target.value,
                             }))
@@ -748,9 +724,9 @@ export default function RegisterPage() {
                         <input
                           id="regHeadline"
                           type="text"
-                          value={candidateProfile.headline}
+                          value={candidateForm.headline}
                           onChange={(e) =>
-                            setCandidateProfile((prev) => ({
+                            setCandidateForm((prev) => ({
                               ...prev,
                               headline: e.target.value,
                             }))
@@ -769,9 +745,9 @@ export default function RegisterPage() {
                         <textarea
                           id="regSummary"
                           rows={3}
-                          value={candidateProfile.summary}
+                          value={candidateForm.summary}
                           onChange={(e) =>
-                            setCandidateProfile((prev) => ({
+                            setCandidateForm((prev) => ({
                               ...prev,
                               summary: e.target.value,
                             }))
@@ -790,9 +766,9 @@ export default function RegisterPage() {
                         <input
                           id="regGithubUrl"
                           type="url"
-                          value={candidateProfile.githubUrl}
+                          value={candidateForm.githubUrl}
                           onChange={(e) =>
-                            setCandidateProfile((prev) => ({
+                            setCandidateForm((prev) => ({
                               ...prev,
                               githubUrl: e.target.value,
                             }))
@@ -811,9 +787,9 @@ export default function RegisterPage() {
                         <input
                           id="regPortfolioUrl"
                           type="url"
-                          value={candidateProfile.portfolioUrl}
+                          value={candidateForm.portfolioUrl}
                           onChange={(e) =>
-                            setCandidateProfile((prev) => ({
+                            setCandidateForm((prev) => ({
                               ...prev,
                               portfolioUrl: e.target.value,
                             }))
@@ -911,6 +887,112 @@ export default function RegisterPage() {
                       placeholder="Confirm your password"
                     />
                   </div>
+                  {/* Additional Information (Optional) */}
+                  <details className="group rounded-lg border border-border bg-card/50">
+                    <summary className="flex cursor-pointer items-center justify-between px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/50">
+                      <span>Additional information (optional)</span>
+                      <svg
+                        className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180"
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="m6 9 6 6 6-6" />
+                      </svg>
+                    </summary>
+                    <div className="space-y-4 border-t border-border px-4 py-4">
+                      <div>
+                        <label
+                          htmlFor="regHeadquarters"
+                          className="mb-1.5 block text-sm font-medium text-foreground"
+                        >
+                          Headquarters
+                        </label>
+                        <input
+                          id="regHeadquarters"
+                          type="text"
+                          value={companyForm.headquarters}
+                          onChange={(e) =>
+                            setCompanyForm((prev) => ({
+                              ...prev,
+                              headquarters: e.target.value,
+                            }))
+                          }
+                          className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+                          placeholder="e.g., New York, NY"
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="regAddress"
+                          className="mb-1.5 block text-sm font-medium text-foreground"
+                        >
+                          Address
+                        </label>
+                        <input
+                          id="regAddress"
+                          type="text"
+                          value={companyForm.address}
+                          onChange={(e) =>
+                            setCompanyForm((prev) => ({
+                              ...prev,
+                              address: e.target.value,
+                            }))
+                          }
+                          className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+                          placeholder="e.g., 123 Main St, Suite 100"
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="regIndustry"
+                          className="mb-1.5 block text-sm font-medium text-foreground"
+                        >
+                          Industry
+                        </label>
+                        <textarea
+                          id="regIndustry"
+                          rows={3}
+                          value={companyForm.industry}
+                          onChange={(e) =>
+                            setCompanyForm((prev) => ({
+                              ...prev,
+                              industry: e.target.value,
+                            }))
+                          }
+                          className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+                          placeholder="e.g., Technology, Finance, Healthcare"
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="regDescription"
+                          className="mb-1.5 block text-sm font-medium text-foreground"
+                        >
+                          Description
+                        </label>
+                        <textarea
+                          id="regDescription"
+                          rows={3}
+                          value={companyForm.description}
+                          onChange={(e) =>
+                            setCompanyForm((prev) => ({
+                              ...prev,
+                              description: e.target.value,
+                            }))
+                          }
+                          className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+                          placeholder="Describe your company, culture, and what makes you unique."
+                        />
+                      </div>
+                    </div>
+                  </details>
                 </>
               )}
 
@@ -949,17 +1031,6 @@ export default function RegisterPage() {
         {/* Step: Candidate Onboarding (Profile Creation) */}
         {step === "candidate-onboarding" && (
           <div className="space-y-6">
-            <div>
-              <button
-                type="button"
-                onClick={handleBack}
-                className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-              >
-                <ArrowLeftIcon className="h-4 w-4" />
-                Back
-              </button>
-            </div>
-
             <div className="text-center">
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-accent-foreground">
                 <CheckIcon className="h-6 w-6" />
@@ -999,28 +1070,6 @@ export default function RegisterPage() {
                   }
                   className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
                   placeholder="e.g., Senior Software Engineer"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="headline"
-                  className="mb-1.5 block text-sm font-medium text-foreground"
-                >
-                  Headline
-                </label>
-                <input
-                  id="headline"
-                  type="text"
-                  value={candidateProfile.headline}
-                  onChange={(e) =>
-                    setCandidateProfile((prev) => ({
-                      ...prev,
-                      headline: e.target.value,
-                    }))
-                  }
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
-                  placeholder="e.g., Building scalable systems at Fortune 500 companies"
                 />
               </div>
 
@@ -1116,51 +1165,6 @@ export default function RegisterPage() {
                 </select>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label
-                    htmlFor="githubUrl"
-                    className="mb-1.5 block text-sm font-medium text-foreground"
-                  >
-                    GitHub URL
-                  </label>
-                  <input
-                    id="githubUrl"
-                    type="url"
-                    value={candidateProfile.githubUrl}
-                    onChange={(e) =>
-                      setCandidateProfile((prev) => ({
-                        ...prev,
-                        githubUrl: e.target.value,
-                      }))
-                    }
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
-                    placeholder="https://github.com/username"
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="portfolioUrl"
-                    className="mb-1.5 block text-sm font-medium text-foreground"
-                  >
-                    Portfolio URL
-                  </label>
-                  <input
-                    id="portfolioUrl"
-                    type="url"
-                    value={candidateProfile.portfolioUrl}
-                    onChange={(e) =>
-                      setCandidateProfile((prev) => ({
-                        ...prev,
-                        portfolioUrl: e.target.value,
-                      }))
-                    }
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
-                    placeholder="https://yourportfolio.com"
-                  />
-                </div>
-              </div>
-
               <button
                 type="submit"
                 disabled={isLoading}
@@ -1185,17 +1189,6 @@ export default function RegisterPage() {
         {/* Step: Company Onboarding */}
         {step === "company-onboarding" && (
           <div className="space-y-6">
-            <div>
-              <button
-                type="button"
-                onClick={handleBack}
-                className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-              >
-                <ArrowLeftIcon className="h-4 w-4" />
-                Back
-              </button>
-            </div>
-
             {createJobProfile === null ? (
               // Choice screen
               <>

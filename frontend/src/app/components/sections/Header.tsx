@@ -67,9 +67,11 @@ export default function Header() {
 
         {/* Desktop CTA */}
         <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:gap-x-4">
-          <Button variant="ghost" className="text-sm font-medium">
-            Sign In
-          </Button>
+          <Link to="/login">
+            <Button variant="ghost" className="text-sm font-medium">
+              Sign In
+            </Button>
+          </Link>
 
           <Link to="/register">
             <Button className="text-sm font-medium cursor-pointer">
@@ -116,10 +118,11 @@ export default function Header() {
             </a>
 
             <div className="mt-4 flex flex-col gap-2">
-              <Button variant="ghost" className="w-full justify-center">
-                Sign In
-              </Button>
-
+              <Link to="/login">
+                <Button variant="ghost" className="w-full justify-center">
+                  Sign In
+                </Button>
+              </Link>
               <Link to="/register">
                 <Button className="w-full justify-center cursor-pointer">
                   Get Started

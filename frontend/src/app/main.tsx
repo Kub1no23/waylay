@@ -3,10 +3,12 @@ import "../index.css";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import ProtectedRoute from "./routes/ProtectedRoute";
 
 import LandingPage from "./pages/LandingPage";
 import Register from "./pages/Register";
 import CandidateDashboard from "./pages/CandidateDashboard";
+import Login from "./pages/Login";
 
 const router = createBrowserRouter([
   {
@@ -18,8 +20,16 @@ const router = createBrowserRouter([
     element: <Register />,
   },
   {
+    path: "/login",
+    element: <Login />,
+  },
+  {
     path: "/candidate/dashboard",
-    element: <CandidateDashboard />, // TODO: Add auth and protect this route
+    element: (
+      <ProtectedRoute>
+        <CandidateDashboard />
+      </ProtectedRoute>
+    ),
   },
 ]);
 
