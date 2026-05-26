@@ -1,18 +1,14 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Button } from "../ui/Button";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/Avatar";
 import { ScrollArea } from "../ui/ScrollArea";
-import {
-  Empty,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-  EmptyDescription,
-} from "../ui/Empty";
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "../ui/Empty";
 import type { Company } from "../../pages/CandidateDashboard";
 import { CompanyProfileView } from "./candidate/CompanyProfileView";
+import { useAuth } from "../../../api/AuthContext";
+import { API } from "../../../api/auth";
 
 // Icons
 function MessageSquareIcon({ className }: { className?: string }) {
@@ -142,31 +138,197 @@ function formatMessageTime(date: Date): string {
   return `${date.toLocaleDateString([], { month: "short", day: "numeric" })} ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
 }
 
-interface ChatsViewProps {
-  chats: any[]; // Changed to any[] to accept both Candidate and Company shapes
-  onSendMessage: (chatId: string, content: string) => void;
-  onMarkAsRead: (chatId: string) => void;
-  isCompany?: boolean; // New optional flag
+interface LatestChatMessage {
+  id: number;
+  sender: number;
+  content: string;
+  createdAt: string;
+  isRead: boolean;
 }
 
-export function ChatsView({
-  chats,
-  onSendMessage,
-  onMarkAsRead,
-  isCompany = false,
-}: ChatsViewProps) {
-  const [selectedChat, setSelectedChat] = useState<any | null>(null);
+interface ChatPreview {
+  chatId: number;
+  latestMessage?: LatestChatMessage | null;
+  createdAt: string;
+  updatedAt: string;
+  displayName?: string;
+  avatarUrl?: string;
+  role?: string;
+  unreadCount?: number;
+  otherUserId?: number;
+  recruiterName?: string;
+  company?: Company;
+  candidateName?: string;
+  candidateAvatar?: string;
+}
+
+interface Message {
+  id: number;
+  sender: number;
+  content: string;
+  createdAt: string;
+  isRead: boolean;
+}
+
+interface ChatHistory extends ChatPreview {
+  messages: Message[];
+}
+
+interface ChatsViewProps {
+  isCompany?: boolean;
+}
+
+export function ChatsView({ isCompany = false }: ChatsViewProps) {
+  const auth = useAuth();
+  const [chats, setChats] = useState<ChatPreview[]>([]);
+  const [selectedChat, setSelectedChat] = useState<ChatHistory | null>(null);
   const [viewingCompany, setViewingCompany] = useState<{
     company: Company;
     role: string;
   } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleOpenChat = (chat: any) => {
-    setSelectedChat(chat);
-    onMarkAsRead(chat.id);
+  useEffect(() => {
+    if (!auth.isAuthenticated) {
+      setLoading(false);
+      return;
+    }
+
+    void loadChatPreviews();
+  }, [auth.isAuthenticated]);
+
+  const loadChatPreviews = async () => {
+    setError(null);
+    setLoading(true);
+
+    try {
+      const response = await API.get<ChatPreview[]>("/chat");
+      console.log("Loaded chat previews:", response.data);
+      setChats(response.data ?? []);
+    } catch (err) {
+      console.error("Failed to load chats", err);
+      setError(err instanceof Error ? err.message : "Failed to load chats");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleViewCompany = (company: Company, role: string) => {
+  const loadChatHistory = async (
+    chatId: number,
+    preview?: ChatPreview,
+  ): Promise<ChatHistory | null> => {
+    setError(null);
+
+    try {
+      const response = await API.get<ChatHistory>(`/chat/${chatId}`);
+      return {
+        ...preview,
+        ...response.data,
+      };
+    } catch (err) {
+      console.error("Failed to load chat history", err);
+      setError(err instanceof Error ? err.message : "Failed to load chat history");
+      return null;
+    } finally {
+    }
+  };
+
+  const markMessagesAsRead = async (chatId: number) => {
+    try {
+      await API.post(`/chat/${chatId}/read`);
+      setChats((prev) =>
+        prev.map((chat) =>
+          chat.chatId === chatId
+            ? {
+              ...chat,
+              unreadCount: 0,
+              latestMessage: chat.latestMessage
+                ? { ...chat.latestMessage, isRead: true }
+                : chat.latestMessage,
+            }
+            : chat,
+        ),
+      );
+    } catch (err) {
+      console.error("Failed to mark messages as read", err);
+    }
+  };
+
+  const handleOpenChat = async (chat: ChatPreview) => {
+    await markMessagesAsRead(chat.chatId);
+    const history = await loadChatHistory(chat.chatId, chat);
+    if (history) {
+      setSelectedChat(history);
+    }
+  };
+
+  const getTargetUserId = (chat: ChatHistory) => {
+    if (chat.otherUserId) {
+      return chat.otherUserId;
+    }
+
+    if (!auth.userId) {
+      return undefined;
+    }
+
+    return chat.messages.find((msg) => msg.sender !== auth.userId)?.sender;
+  };
+
+  const handleSendMessage = async (content: string) => {
+    if (!selectedChat) {
+      return;
+    }
+
+    if (!auth.userId) {
+      setError("Unable to resolve current user.");
+      return;
+    }
+
+    const targetUserId = getTargetUserId(selectedChat);
+    if (!targetUserId) {
+      setError("Unable to resolve chat recipient.");
+      return;
+    }
+
+    try {
+      const response = await API.post(`/chat/user/${targetUserId}`, {
+        content,
+      });
+      const sentMessage = response.data?.data ?? response.data;
+
+      if (sentMessage) {
+        setSelectedChat((prev) =>
+          prev
+            ? {
+              ...prev,
+              messages: [...prev.messages, sentMessage],
+              latestMessage: sentMessage,
+              updatedAt: sentMessage.createdAt,
+            }
+            : prev,
+        );
+        setChats((prev) =>
+          prev.map((chat) =>
+            chat.chatId === selectedChat.chatId
+              ? {
+                ...chat,
+                latestMessage: sentMessage,
+                updatedAt: sentMessage.createdAt,
+              }
+              : chat,
+          ),
+        );
+        setError(null);
+      }
+    } catch (err) {
+      console.error("Failed to send message", err);
+      setError(err instanceof Error ? err.message : "Failed to send message");
+    }
+  };
+
+  const handleViewCompany = (company: Company | undefined, role: string) => {
+    if (!company) return;
     setViewingCompany({ company, role });
   };
 
@@ -187,10 +349,27 @@ export function ChatsView({
         isCompany={isCompany}
         onBack={() => setSelectedChat(null)}
         onViewCompany={() =>
-          handleViewCompany(selectedChat.company, selectedChat.role)
+          handleViewCompany(selectedChat.company, selectedChat.role ?? "")
         }
-        onSendMessage={(content) => onSendMessage(selectedChat.id, content)}
+        onSendMessage={handleSendMessage}
       />
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex h-full items-center justify-center p-6 text-sm text-muted-foreground">
+        Loading conversations...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-sm text-foreground">
+        <p>{error}</p>
+        <Button onClick={loadChatPreviews}>Retry</Button>
+      </div>
     );
   }
 
@@ -216,21 +395,23 @@ export function ChatsView({
     <ScrollArea className="h-full">
       <div className="grid gap-2 p-4 lg:p-6">
         {chats.map((chat) => {
-          const name = isCompany ? chat.candidateName : chat.company?.name;
-          const avatar = isCompany ? chat.candidateAvatar : chat.company?.logo;
+          const name = isCompany
+            ? chat.candidateName ?? chat.displayName ?? `Chat ${chat.chatId}`
+            : chat.company?.name ?? chat.displayName ?? `Chat ${chat.chatId}`;
+          const avatar = isCompany ? chat.candidateAvatar ?? chat.avatarUrl : chat.company?.logo ?? chat.avatarUrl;
           const initial = name ? name[0] : "?";
+          const unreadCount = chat.unreadCount ?? (chat.latestMessage && !chat.latestMessage.isRead ? 1 : 0);
+          const previewDate = chat.latestMessage?.createdAt ?? chat.updatedAt;
 
-          const senderPrefix = chat.lastMessage.isFromCompany
-            ? isCompany
-              ? "You"
-              : chat.recruiterName?.split(" ")[0] || "Recruiter"
+          const senderPrefix = chat.latestMessage?.sender === auth.userId
+            ? "You"
             : isCompany
               ? chat.candidateName?.split(" ")[0] || "Candidate"
-              : "You";
+              : chat.recruiterName?.split(" ")[0] || "Recruiter";
 
           return (
             <button
-              key={chat.id}
+              key={chat.chatId}
               onClick={() => handleOpenChat(chat)}
               className="w-full rounded-xl border border-border bg-card p-4 text-left transition-all hover:shadow-md hover:border-primary/20"
             >
@@ -242,9 +423,9 @@ export function ChatsView({
                       {initial}
                     </AvatarFallback>
                   </Avatar>
-                  {chat.unreadCount > 0 && (
+                  {unreadCount > 0 && (
                     <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-                      {chat.unreadCount}
+                      {unreadCount}
                     </span>
                   )}
                 </div>
@@ -260,18 +441,17 @@ export function ChatsView({
                       </p>
                     </div>
                     <span className="shrink-0 text-xs text-muted-foreground">
-                      {formatRelativeTime(new Date(chat.lastMessage.createdAt))}
+                      {formatRelativeTime(new Date(previewDate))}
                     </span>
                   </div>
 
                   <p
-                    className={`mt-1.5 text-sm truncate ${
-                      chat.unreadCount > 0
-                        ? "text-foreground font-medium"
-                        : "text-muted-foreground"
-                    }`}
+                    className={`mt-1.5 text-sm truncate ${unreadCount > 0
+                      ? "text-foreground font-medium"
+                      : "text-muted-foreground"
+                      }`}
                   >
-                    {senderPrefix}: {chat.lastMessage.content}
+                    {senderPrefix}: {chat.latestMessage?.content ?? "No messages yet"}
                   </p>
                 </div>
               </div>
@@ -284,7 +464,7 @@ export function ChatsView({
 }
 
 interface ChatThreadProps {
-  chat: any;
+  chat: ChatHistory;
   isCompany: boolean;
   onBack: () => void;
   onViewCompany: () => void;
@@ -298,6 +478,8 @@ function ChatThread({
   onViewCompany,
   onSendMessage,
 }: ChatThreadProps) {
+  const auth = useAuth();
+  const currentUserId = auth.userId;
   const [message, setMessage] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -315,19 +497,23 @@ function ChatThread({
     inputRef.current?.focus();
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
   };
 
-  const name = isCompany ? chat.candidateName : chat.company?.name;
-  const avatar = isCompany ? chat.candidateAvatar : chat.company?.logo;
+  const name = isCompany
+    ? chat.candidateName ?? chat.displayName ?? `Chat ${chat.chatId}`
+    : chat.company?.name ?? chat.displayName ?? `Chat ${chat.chatId}`;
+  const avatar = isCompany ? chat.candidateAvatar ?? chat.avatarUrl : chat.company?.logo ?? chat.avatarUrl;
   const initial = name ? name[0] : "?";
-  const subtitle = isCompany
-    ? chat.role
-    : `${chat.role} • ${chat.recruiterName}`;
+  const subtitle = chat.role
+    ? isCompany
+      ? chat.role
+      : `${chat.role}${chat.recruiterName ? ` • ${chat.recruiterName}` : ""}`
+    : "Conversation";
 
   return (
     <div className="flex h-full flex-col">
@@ -357,7 +543,7 @@ function ChatThread({
           <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
         </div>
 
-        {!isCompany && (
+        {!isCompany && chat.company?.name && (
           <Button variant="outline" size="sm" onClick={onViewCompany}>
             <BuildingIcon className="size-4" />
             <span className="hidden sm:inline">Company</span>
@@ -368,12 +554,8 @@ function ChatThread({
       {/* Messages */}
       <div className="flex-1 overflow-auto p-4" ref={scrollRef}>
         <div className="mx-auto max-w-2xl space-y-3">
-          {chat.messages.map((msg: any) => {
-            // For companies, company messages are outgoing (right side).
-            // For candidates, company messages are incoming (left side).
-            const isIncoming = isCompany
-              ? !msg.isFromCompany
-              : msg.isFromCompany;
+          {chat.messages.map((msg: Message) => {
+            const isIncoming = currentUserId ? msg.sender !== currentUserId : true;
 
             return (
               <div
@@ -381,21 +563,19 @@ function ChatThread({
                 className={`flex ${isIncoming ? "justify-start" : "justify-end"}`}
               >
                 <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${
-                    isIncoming
-                      ? "bg-card border border-border text-foreground rounded-bl-md"
-                      : "bg-primary text-primary-foreground rounded-br-md"
-                  }`}
+                  className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${isIncoming
+                    ? "bg-card border border-border text-foreground rounded-bl-md"
+                    : "bg-primary text-primary-foreground rounded-br-md"
+                    }`}
                 >
                   <p className="text-sm whitespace-pre-wrap leading-relaxed">
                     {msg.content}
                   </p>
                   <p
-                    className={`mt-1.5 text-[10px] ${
-                      isIncoming
-                        ? "text-muted-foreground"
-                        : "text-primary-foreground/70"
-                    }`}
+                    className={`mt-1.5 text-[10px] ${isIncoming
+                      ? "text-muted-foreground"
+                      : "text-primary-foreground/70"
+                      }`}
                   >
                     {formatMessageTime(new Date(msg.createdAt))}
                   </p>

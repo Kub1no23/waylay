@@ -1,14 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAuth } from "../../api/AuthContext";
-import { API } from "../../api/auth";
+import { useUser } from "../../context/UserContext";
 import { Sidebar, type Section } from "../components/ui/Sidebar";
 import { CandidateProfile } from "../components/sections/candidate/CandidateProfile";
 import { CandidateSettings } from "../components/sections/candidate/CandidateSettings";
 import { CandidateInbox } from "../components/sections/candidate/CandidateInbox";
 import { ChatsView } from "../components/sections/ChatsView";
-import { useNavigate } from "react-router-dom";
 
 export type Company = {
   id: string;
@@ -54,73 +53,34 @@ export type Chat = {
   messages: ChatMessage[];
 };
 
-interface MatchStatus {
-  statusId: number;
-  pending: boolean;
-  createdAt: string;
-  updatedAt: string;
-  companyId: number;
-}
-
-interface LatestChatMessage {
-  id: number;
-  sender: number;
-  content: string;
-  createdAt: string;
-  isRead: boolean;
-}
-
-interface ChatSummary {
-  chatId: number;
-  latestMessage?: LatestChatMessage | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export default function CandidateDashboard() {
-  const navigate = useNavigate();
   const auth = useAuth();
+  const { inboxCount, unreadCount, loading, error } = useUser();
   const [activeSection, setActiveSection] = useState<Section>("requests");
+
   const [requests] = useState<Request[]>([]);
-  const [chats] = useState<Chat[]>([]);
-  const [pendingCount, setPendingCount] = useState(0);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!auth.isAuthenticated) {
-      setLoading(false);
-      navigate("/login");
-      return;
-    }
-
-    const loadDashboardCounts = async () => {
-      try {
-        const [matchResponse, chatResponse] = await Promise.all([
-          API.get<MatchStatus[]>("/match"),
-          API.get<ChatSummary[]>("/chat"),
-        ]);
-
-        if (matchResponse.data) {
-          const pendingMatches = matchResponse.data.filter((match) => match.pending);
-          setPendingCount(pendingMatches.length);
-        }
-
-        if (chatResponse.data) {
-          const unreadChats = chatResponse.data.reduce((sum, chat) => {
-            return sum + (chat.latestMessage && !chat.latestMessage.isRead ? 1 : 0);
-          }, 0);
-          setUnreadCount(unreadChats);
-        }
-      } catch (error) {
-        console.error("Dashboard load failed", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadDashboardCounts();
-  }, [auth.isAuthenticated]);
+  if (!auth.isAuthenticated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4 text-center text-sm text-foreground">
+        Please sign in to see your candidate dashboard.
+      </div>
+    );
+  }
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-muted/30 text-muted-foreground">
+        Loading dashboard...
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4 text-center text-sm text-foreground">
+        Error loading dashboard: {error}
+      </div>
+    );
+  }
 
   const handleAcceptRequest = (requestId: string) => {
     console.warn("accept request not wired yet", requestId);
@@ -128,14 +88,6 @@ export default function CandidateDashboard() {
 
   const handleDeclineRequest = (requestId: string) => {
     console.warn("decline request not wired yet", requestId);
-  };
-
-  const handleSendMessage = (chatId: string, content: string) => {
-    console.warn("send message not wired yet", chatId, content);
-  };
-
-  const handleMarkChatAsRead = (chatId: string) => {
-    console.warn("mark chat read not wired yet", chatId);
   };
 
   const sectionTitle: Record<Section, string> = {
@@ -160,13 +112,7 @@ export default function CandidateDashboard() {
           />
         );
       case "chats":
-        return (
-          <ChatsView
-            chats={chats}
-            onSendMessage={handleSendMessage}
-            onMarkAsRead={handleMarkChatAsRead}
-          />
-        );
+        return <ChatsView />;
       default:
         return null;
     }
@@ -184,7 +130,7 @@ export default function CandidateDashboard() {
     <Sidebar
       activeSection={activeSection}
       onSectionChange={setActiveSection}
-      requestCount={pendingCount}
+      requestCount={inboxCount}
       unreadCount={unreadCount}
       onLogout={auth.logout}
     >

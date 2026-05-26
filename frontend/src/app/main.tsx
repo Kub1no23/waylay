@@ -4,6 +4,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { AuthProvider } from "../api/AuthContext";
+import { UserProvider } from "../context/UserContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 import LandingPage from "./pages/LandingPage";
@@ -29,7 +30,9 @@ const router = createBrowserRouter([
     path: "/candidate/dashboard",
     element: (
       <ProtectedRoute>
-        <CandidateDashboard />
+        <UserProvider>
+          <CandidateDashboard />
+        </UserProvider>
       </ProtectedRoute>
     ),
   },
