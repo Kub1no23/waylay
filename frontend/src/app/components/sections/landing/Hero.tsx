@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Button } from "../ui/Button";
+import { Button } from "../../ui/Button";
 import { ArrowRight, Building2, Users } from "lucide-react";
 
 export default function Hero() {

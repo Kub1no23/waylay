@@ -6,9 +6,9 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 import LandingPage from "./pages/LandingPage";
-import Register from "./pages/Register";
+import RegisterPage from "./pages/RegisterPage";
 import CandidateDashboard from "./pages/CandidateDashboard";
-import Login from "./pages/Login";
+import LoginPage from "./pages/LoginPage";
 
 const router = createBrowserRouter([
   {
@@ -17,11 +17,11 @@ const router = createBrowserRouter([
   },
   {
     path: "/register",
-    element: <Register />,
+    element: <RegisterPage />,
   },
   {
     path: "/login",
-    element: <Login />,
+    element: <LoginPage />,
   },
   {
     path: "/candidate/dashboard",
