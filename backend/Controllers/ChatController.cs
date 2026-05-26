@@ -1,4 +1,5 @@
-﻿using backend.Models;
+﻿using backend.Hubs;
+using backend.Models;
 using backend.Utils;
 using backend.Utils.DTO;
 using Microsoft.AspNetCore.Authorization;
@@ -15,35 +16,49 @@ namespace backend.Controllers;
 public class ChatController : ControllerBase
 {
     private readonly AppDbContext _context;
-    private readonly IHubContext<ChatHub> _hubContext;
+    private readonly IHubContext<MainHub> _hubContext;
 
-    public ChatController(AppDbContext context, IHubContext<ChatHub> hubContext)
+    public ChatController(AppDbContext context, IHubContext<MainHub> hubContext)
     {
         _context = context;
         _hubContext = hubContext;
     }
 
-    [HttpPost("{id}/message")] // POST /api/chat/:id
-    public async Task<IActionResult> SendMessage(int ChatId, [FromBody] SendMessageReq dto)
+    [HttpPost("user/{targetUserId}")] // POST /api/chat/user/:targetUserId
+    public async Task<IActionResult> SendMessageToUser(int targetUserId, [FromBody] SendMessageReq dto)
     {
         if (string.IsNullOrWhiteSpace(dto.Content))
             return BadRequest("Content cannot be empty");
 
-        var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userIdStr == null) return Unauthorized();
-        int userId = int.Parse(userIdStr);
+        var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var currentUserRole = User.FindFirst(ClaimTypes.Role)?.Value;
 
-        var chat = await _context.Chats.FindAsync(ChatId);
+        if (string.IsNullOrEmpty(currentUserIdStr) || !int.TryParse(currentUserIdStr, out int currentUserId))
+        {
+            return Unauthorized("User is not authenticated or ID is invalid");
+        }
+
+        int candidateId = currentUserRole == "candidate" ? currentUserId : targetUserId;
+        int companyId = currentUserRole == "company" ? currentUserId : targetUserId;
+
+        var statusRecord = await _context.Statuses
+            .FirstOrDefaultAsync(s => s.CandidateId == candidateId && s.CompanyId == companyId);
+        if (statusRecord == null)
+        {
+            return NotFound("No match status found between you and the target user");
+        }
+
+        if (statusRecord.CandidateInterested && statusRecord.CompanyInterested)
+        {
+            return BadRequest("You can only chat with users where a mutual Match has been established");
+        }
+
+        int chatId = statusRecord.Id;
+
+        var chat = await _context.Chats.FindAsync(chatId);
         if (chat == null)
         {
-            chat = new Chat
-            {
-                StatusId = ChatId,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
-            _context.Chats.Add(chat);
-            await _context.SaveChangesAsync();
+            throw new Exception("Chat record should have been created when the status was created. This should never happen.");
         }
         else
         {
@@ -53,8 +68,8 @@ public class ChatController : ControllerBase
 
         var message = new Message
         {
-            ChatId = ChatId,
-            Sender = userId,
+            ChatId = chatId,
+            Sender = currentUserId,
             Content = dto.Content,
             CreatedAt = DateTime.UtcNow,
             IsRead = false
@@ -63,18 +78,19 @@ public class ChatController : ControllerBase
         _context.Messages.Add(message);
         await _context.SaveChangesAsync();
 
-        var ws = new
+
+        var wsPayload = new
         {
             message.Id,
-            message.ChatId,
+            ChatId = chatId,
             message.Sender,
             message.Content,
             message.CreatedAt,
             message.IsRead
         };
 
-        await _hubContext.Clients.Group(ChatId.ToString())
-            .SendAsync("ReceiveMessage", ws);
+        await _hubContext.Clients.Group($"candidate_{candidateId}").SendAsync("ReceiveMessage", wsPayload);
+        await _hubContext.Clients.Group($"company_{companyId}").SendAsync("ReceiveMessage", wsPayload);
 
         return Ok(new { message = "Message sent successfully", data = message });
     }

@@ -1,7 +1,9 @@
-﻿using backend.Models;
+﻿using backend.Hubs;
+using backend.Models;
 using backend.Utils.DTO;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Pgvector;
 using Pgvector.EntityFrameworkCore;
@@ -15,10 +17,12 @@ namespace backend.Controllers;
 public class MatchController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly IHubContext<MainHub> _hubContext;
 
-    public MatchController(AppDbContext context)
+    public MatchController(AppDbContext context, IHubContext<MainHub> hubContext)
     {
         _context = context;
+        _hubContext = hubContext;
     }
 
     [HttpGet("lookup/{companyProfileId}")] // GET /api/match/lookup/:id
@@ -170,12 +174,24 @@ public class MatchController : ControllerBase
 
             _context.Statuses.Update(existingStatus);
             await _context.SaveChangesAsync();
+
             _context.Chats.Add(new Chat
             {
                 StatusId = existingStatus.Id,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             });
+
+            var matchNotification = new
+            {
+                Message = "It's a Match! 🎉",
+                ChatId = existingStatus.Id,
+                CandidateId = candidateId,
+                CompanyId = companyId
+            };
+
+            await _hubContext.Clients.Group($"candidate_{candidateId}").SendAsync("Notification_Match", matchNotification);
+            await _hubContext.Clients.Group($"company_{companyId}").SendAsync("Notification_Match", matchNotification);
 
             return Ok(new
             {
