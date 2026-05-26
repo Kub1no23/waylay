@@ -67,8 +67,8 @@ namespace backend.Utils
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
-                issuer: "talentmatch-backend",
-                audience: "talentmatch-frontend",
+                issuer: "waylay-backend",
+                audience: "waylay-frontend",
                 claims: claims,
                 expires: DateTime.UtcNow.AddDays(7),
                 signingCredentials: creds
