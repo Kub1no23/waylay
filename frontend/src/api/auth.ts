@@ -90,3 +90,5 @@ export async function login(payload: {
 
   return data;
 }
+
+export { API };
