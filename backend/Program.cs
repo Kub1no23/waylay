@@ -1,4 +1,5 @@
 using backend;
+using backend.Hubs;
 using backend.Utils;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -70,6 +71,6 @@ app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-app.MapHub<ChatHub>("/api/hub/chat");
+app.MapHub<MainHub>("/api/hub/chat");
 
 app.Run();
