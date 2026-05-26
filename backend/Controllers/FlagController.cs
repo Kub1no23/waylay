@@ -220,7 +220,7 @@ public class FlagController : ControllerBase
 
         return CreatedAtAction(nameof(SearchFlags), new { q = newFlag.Name }, new
         {
-            message = "Flag successfully created with semantic embedding.",
+            message = "Flag successfully created with semantic embedding",
             flag = new { newFlag.Id, newFlag.Name, newFlag.Category }
         });
     }

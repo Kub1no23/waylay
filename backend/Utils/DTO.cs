@@ -104,3 +104,9 @@ public class CreateFlagReq
     public required string Name { get; set; }
     public required string Category { get; set; } // e.g. 'skill', 'trait', 'industry'
 }
+
+public class CreateMatchStatusReq
+{
+    public int SourceId { get; set; }
+    public int TargetId { get; set; }
+}
