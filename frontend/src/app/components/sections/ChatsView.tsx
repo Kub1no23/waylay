@@ -11,7 +11,7 @@ import {
   EmptyTitle,
   EmptyDescription,
 } from "../ui/Empty";
-import type { Chat, Company } from "../../pages/CandidateDashboard";
+import type { Company } from "../../pages/CandidateDashboard";
 import { CompanyProfileView } from "./candidate/CompanyProfileView";
 
 // Icons
@@ -143,23 +143,25 @@ function formatMessageTime(date: Date): string {
 }
 
 interface ChatsViewProps {
-  chats: Chat[];
+  chats: any[]; // Changed to any[] to accept both Candidate and Company shapes
   onSendMessage: (chatId: string, content: string) => void;
   onMarkAsRead: (chatId: string) => void;
+  isCompany?: boolean; // New optional flag
 }
 
 export function ChatsView({
   chats,
   onSendMessage,
   onMarkAsRead,
+  isCompany = false,
 }: ChatsViewProps) {
-  const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
+  const [selectedChat, setSelectedChat] = useState<any | null>(null);
   const [viewingCompany, setViewingCompany] = useState<{
     company: Company;
     role: string;
   } | null>(null);
 
-  const handleOpenChat = (chat: Chat) => {
+  const handleOpenChat = (chat: any) => {
     setSelectedChat(chat);
     onMarkAsRead(chat.id);
   };
@@ -182,6 +184,7 @@ export function ChatsView({
     return (
       <ChatThread
         chat={selectedChat}
+        isCompany={isCompany}
         onBack={() => setSelectedChat(null)}
         onViewCompany={() =>
           handleViewCompany(selectedChat.company, selectedChat.role)
@@ -201,8 +204,7 @@ export function ChatsView({
             </EmptyMedia>
             <EmptyTitle>No conversations</EmptyTitle>
             <EmptyDescription>
-              Accept a company request to start chatting. Your conversations
-              will appear here.
+              Conversations will appear here once active.
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
@@ -213,69 +215,77 @@ export function ChatsView({
   return (
     <ScrollArea className="h-full">
       <div className="grid gap-2 p-4 lg:p-6">
-        {chats.map((chat) => (
-          <button
-            key={chat.id}
-            onClick={() => handleOpenChat(chat)}
-            className="w-full rounded-xl border border-border bg-card p-4 text-left transition-all hover:shadow-md hover:border-primary/20"
-          >
-            <div className="flex items-start gap-4">
-              <div className="relative">
-                <Avatar className="size-11 shrink-0 border border-border">
-                  <AvatarImage src={chat.company.logo} />
-                  <AvatarFallback className="bg-muted text-muted-foreground text-sm">
-                    {chat.company.name[0]}
-                  </AvatarFallback>
-                </Avatar>
-                {chat.unreadCount > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-                    {chat.unreadCount}
-                  </span>
-                )}
-              </div>
+        {chats.map((chat) => {
+          const name = isCompany ? chat.candidateName : chat.company?.name;
+          const avatar = isCompany ? chat.candidateAvatar : chat.company?.logo;
+          const initial = name ? name[0] : "?";
 
-              <div className="min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <span
-                      className={`text-sm font-semibold ${
-                        chat.unreadCount > 0
-                          ? "text-foreground"
-                          : "text-foreground"
-                      }`}
-                    >
-                      {chat.company.name}
+          const senderPrefix = chat.lastMessage.isFromCompany
+            ? isCompany
+              ? "You"
+              : chat.recruiterName?.split(" ")[0] || "Recruiter"
+            : isCompany
+              ? chat.candidateName?.split(" ")[0] || "Candidate"
+              : "You";
+
+          return (
+            <button
+              key={chat.id}
+              onClick={() => handleOpenChat(chat)}
+              className="w-full rounded-xl border border-border bg-card p-4 text-left transition-all hover:shadow-md hover:border-primary/20"
+            >
+              <div className="flex items-start gap-4">
+                <div className="relative">
+                  <Avatar className="size-11 shrink-0 border border-border">
+                    <AvatarImage src={avatar} />
+                    <AvatarFallback className="bg-muted text-muted-foreground text-sm">
+                      {initial}
+                    </AvatarFallback>
+                  </Avatar>
+                  {chat.unreadCount > 0 && (
+                    <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                      {chat.unreadCount}
                     </span>
-                    <p className="text-sm text-muted-foreground">{chat.role}</p>
-                  </div>
-                  <span className="shrink-0 text-xs text-muted-foreground">
-                    {formatRelativeTime(chat.lastMessage.createdAt)}
-                  </span>
+                  )}
                 </div>
 
-                <p
-                  className={`mt-1.5 text-sm truncate ${
-                    chat.unreadCount > 0
-                      ? "text-foreground font-medium"
-                      : "text-muted-foreground"
-                  }`}
-                >
-                  {chat.lastMessage.isFromCompany
-                    ? chat.recruiterName.split(" ")[0]
-                    : "You"}
-                  : {chat.lastMessage.content}
-                </p>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <span className="text-sm font-semibold text-foreground">
+                        {name}
+                      </span>
+                      <p className="text-sm text-muted-foreground">
+                        {chat.role}
+                      </p>
+                    </div>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {formatRelativeTime(new Date(chat.lastMessage.createdAt))}
+                    </span>
+                  </div>
+
+                  <p
+                    className={`mt-1.5 text-sm truncate ${
+                      chat.unreadCount > 0
+                        ? "text-foreground font-medium"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    {senderPrefix}: {chat.lastMessage.content}
+                  </p>
+                </div>
               </div>
-            </div>
-          </button>
-        ))}
+            </button>
+          );
+        })}
       </div>
     </ScrollArea>
   );
 }
 
 interface ChatThreadProps {
-  chat: Chat;
+  chat: any;
+  isCompany: boolean;
   onBack: () => void;
   onViewCompany: () => void;
   onSendMessage: (content: string) => void;
@@ -283,6 +293,7 @@ interface ChatThreadProps {
 
 function ChatThread({
   chat,
+  isCompany,
   onBack,
   onViewCompany,
   onSendMessage,
@@ -311,6 +322,13 @@ function ChatThread({
     }
   };
 
+  const name = isCompany ? chat.candidateName : chat.company?.name;
+  const avatar = isCompany ? chat.candidateAvatar : chat.company?.logo;
+  const initial = name ? name[0] : "?";
+  const subtitle = isCompany
+    ? chat.role
+    : `${chat.role} • ${chat.recruiterName}`;
+
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
@@ -326,57 +344,65 @@ function ChatThread({
         </Button>
 
         <Avatar className="size-9 shrink-0 border border-border">
-          <AvatarImage src={chat.company.logo} />
+          <AvatarImage src={avatar} />
           <AvatarFallback className="bg-muted text-muted-foreground text-xs">
-            {chat.company.name[0]}
+            {initial}
           </AvatarFallback>
         </Avatar>
 
         <div className="min-w-0 flex-1">
           <h2 className="text-sm font-semibold text-foreground truncate">
-            {chat.company.name}
+            {name}
           </h2>
-          <p className="text-xs text-muted-foreground truncate">
-            {chat.role} • {chat.recruiterName}
-          </p>
+          <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
         </div>
 
-        <Button variant="outline" size="sm" onClick={onViewCompany}>
-          <BuildingIcon className="size-4" />
-          <span className="hidden sm:inline">Company</span>
-        </Button>
+        {!isCompany && (
+          <Button variant="outline" size="sm" onClick={onViewCompany}>
+            <BuildingIcon className="size-4" />
+            <span className="hidden sm:inline">Company</span>
+          </Button>
+        )}
       </div>
 
       {/* Messages */}
       <div className="flex-1 overflow-auto p-4" ref={scrollRef}>
         <div className="mx-auto max-w-2xl space-y-3">
-          {chat.messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`flex ${msg.isFromCompany ? "justify-start" : "justify-end"}`}
-            >
+          {chat.messages.map((msg: any) => {
+            // For companies, company messages are outgoing (right side).
+            // For candidates, company messages are incoming (left side).
+            const isIncoming = isCompany
+              ? !msg.isFromCompany
+              : msg.isFromCompany;
+
+            return (
               <div
-                className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${
-                  msg.isFromCompany
-                    ? "bg-card border border-border text-foreground rounded-bl-md"
-                    : "bg-primary text-primary-foreground rounded-br-md"
-                }`}
+                key={msg.id}
+                className={`flex ${isIncoming ? "justify-start" : "justify-end"}`}
               >
-                <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                  {msg.content}
-                </p>
-                <p
-                  className={`mt-1.5 text-[10px] ${
-                    msg.isFromCompany
-                      ? "text-muted-foreground"
-                      : "text-primary-foreground/70"
+                <div
+                  className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${
+                    isIncoming
+                      ? "bg-card border border-border text-foreground rounded-bl-md"
+                      : "bg-primary text-primary-foreground rounded-br-md"
                   }`}
                 >
-                  {formatMessageTime(msg.createdAt)}
-                </p>
+                  <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                    {msg.content}
+                  </p>
+                  <p
+                    className={`mt-1.5 text-[10px] ${
+                      isIncoming
+                        ? "text-muted-foreground"
+                        : "text-primary-foreground/70"
+                    }`}
+                  >
+                    {formatMessageTime(new Date(msg.createdAt))}
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

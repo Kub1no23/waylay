@@ -10,6 +10,7 @@ import LandingPage from "./pages/LandingPage";
 import RegisterPage from "./pages/RegisterPage";
 import CandidateDashboard from "./pages/CandidateDashboard";
 import LoginPage from "./pages/LoginPage";
+import CompanyDashboard from "./pages/CompanyDashboard";
 
 const router = createBrowserRouter([
   {
@@ -31,6 +32,10 @@ const router = createBrowserRouter([
         <CandidateDashboard />
       </ProtectedRoute>
     ),
+  },
+  {
+    path: "/company/dashboard",
+    element: <CompanyDashboard />,
   },
 ]);
 
