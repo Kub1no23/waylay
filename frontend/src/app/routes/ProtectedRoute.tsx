@@ -1,15 +1,12 @@
+import type { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
-import type { JSX } from "react/jsx-runtime";
+import { useAuth } from "../../api/AuthContext";
 
-export default function ProtectedRoute({
-  children,
-}: {
-  children: JSX.Element;
-}) {
-  const isAuthenticated = Boolean(localStorage.getItem("token"));
+export default function ProtectedRoute({ children }: { children: ReactNode }) {
+  const { isAuthenticated } = useAuth();
 
   if (!isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   return children;

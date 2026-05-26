@@ -21,7 +21,7 @@ export function validateCompanyForm(f: CompanyFormData): string | null {
   if (!f.password) return "Password is required";
   if (f.password.length < 8) return "Password too short";
   if (f.password !== f.confirmPassword) return "Passwords do not match";
-  if (!f.companyName) return "Company name is required";
+  if (!f.name) return "Company name is required";
   return null;
 }
 

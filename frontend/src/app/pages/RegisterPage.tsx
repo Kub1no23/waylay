@@ -11,6 +11,11 @@ import { CandidateForm } from "../components/sections/register/CandidateForm";
 import { CompanyForm } from "../components/sections/register/CompanyForm";
 import { AuthProgressBar } from "../components/sections/register/AuthProgressBar";
 
+import {
+  validateCandidateForm,
+  validateCompanyForm,
+} from "../utils/validation";
+
 export default function RegisterPage() {
   const navigate = useNavigate();
 
@@ -29,12 +34,57 @@ export default function RegisterPage() {
       flow.setIsLoading(true);
       flow.setError(null);
 
+      // -------------------------
+      // 1. VALIDATION LAYER
+      // -------------------------
       if (flow.accountType === "candidate") {
-        await registerCandidate(candidate.candidateForm);
-      } else {
-        await registerCompany(company.companyForm);
+        const error = validateCandidateForm(candidate.candidateForm);
+        if (error) {
+          flow.setError(error);
+          return;
+        }
       }
 
+      if (flow.accountType === "company") {
+        const error = validateCompanyForm(company.companyForm);
+        if (error) {
+          flow.setError(error);
+          return;
+        }
+      }
+
+      // -------------------------
+      // 2. BUILD CLEAN PAYLOAD
+      // -------------------------
+      if (flow.accountType === "candidate") {
+        const f = candidate.candidateForm;
+
+        await registerCandidate({
+          email: f.email.trim(),
+          password: f.password,
+          firstName: f.firstName.trim(),
+          lastName: f.lastName.trim(),
+          location: f.location?.trim() || undefined,
+          headline: f.headline?.trim() || undefined,
+          summary: f.summary?.trim() || undefined,
+        });
+      } else {
+        const f = company.companyForm;
+
+        await registerCompany({
+          email: f.email.trim(),
+          password: f.password,
+          name: f.name.trim(),
+          headquarters: f.headquarters?.trim() || undefined,
+          address: f.address?.trim() || undefined,
+          industry: f.industry?.trim() || undefined,
+          description: f.description?.trim() || undefined,
+        });
+      }
+
+      // -------------------------
+      // 3. SUCCESS FLOW
+      // -------------------------
       navigate("/login", {
         state: {
           email:
@@ -43,8 +93,8 @@ export default function RegisterPage() {
               : company.companyForm.email,
         },
       });
-    } catch (e) {
-      flow.setError("Registration failed");
+    } catch (e: any) {
+      flow.setError(e?.response?.data?.message || "Registration failed");
     } finally {
       flow.setIsLoading(false);
     }

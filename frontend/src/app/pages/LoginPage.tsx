@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { login as loginApi } from "../../api/auth";
+
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import {
@@ -11,6 +13,7 @@ import {
   CardTitle,
 } from "../components/ui/Card";
 import { EyeIcon, EyeOffIcon, Loader2Icon } from "lucide-react";
+import { useAuth } from "../../api/AuthContext";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -23,6 +26,8 @@ export default function LoginPage() {
 
   const isFormValid = email.trim() !== "" && password.trim() !== "";
 
+  const { login } = useAuth();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isFormValid) return;
@@ -31,15 +36,24 @@ export default function LoginPage() {
     setError("");
 
     try {
-      // Simulated login
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const res = await loginApi({ email, password });
 
-      // Example: store auth state
-      localStorage.setItem("token", "mock-token");
+      // backend returns: { message, jwt }
+      const token = res.jwt;
 
-      navigate("/"); // react-router-dom navigation
-    } catch {
-      setError("Invalid email or password. Please try again.");
+      if (!token) {
+        throw new Error("No token returned from server");
+      }
+
+      localStorage.setItem("token", token);
+
+      login(token);
+
+      navigate("/candidate/dashboard");
+    } catch (err: any) {
+      const message = err?.response?.data || err?.message || "Login failed";
+
+      setError(message);
     } finally {
       setIsLoading(false);
     }
