@@ -170,6 +170,12 @@ public class MatchController : ControllerBase
 
             _context.Statuses.Update(existingStatus);
             await _context.SaveChangesAsync();
+            _context.Chats.Add(new Chat
+            {
+                StatusId = existingStatus.Id,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
 
             return Ok(new
             {
@@ -179,5 +185,85 @@ public class MatchController : ControllerBase
         }
 
         return BadRequest("Invalid user role execution");
+    }
+
+    [HttpGet] // GET /api/match
+    public async Task<IActionResult> GetMyMatches()
+    {
+        var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var currentUserRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+        if (string.IsNullOrEmpty(currentUserIdStr) || !int.TryParse(currentUserIdStr, out int currentUserId))
+        {
+            return Unauthorized("User is not authenticated or ID is invalid");
+        }
+
+        if (currentUserRole == "company")
+        {
+            var companyMatches = await _context.Statuses
+                .Where(s => s.CompanyId == currentUserId)
+                .Select(s => new
+                {
+                    StatusId = s.Id,
+                    Pending = !s.CandidateInterested,
+                    CreatedAt = s.CreatedAt,
+                    UpdatedAt = s.UpdatedAt,
+                    CandidateId = s.CandidateId
+                })
+                .ToListAsync();
+
+            return Ok(companyMatches);
+        }
+
+        if (currentUserRole == "candidate")
+        {
+            var candidateMatches = await _context.Statuses
+                .Where(s => s.CandidateId == currentUserId)
+                .Select(s => new
+                {
+                    StatusId = s.Id,
+                    Pending = !s.CandidateInterested,
+                    CreatedAt = s.CreatedAt,
+                    UpdatedAt = s.UpdatedAt,
+                    CompanyId = s.CompanyId
+                })
+                .ToListAsync();
+
+            return Ok(candidateMatches);
+        }
+
+        return BadRequest("Invalid user role execution");
+    }
+
+    [HttpDelete("{statusId}")] // DELETE /api/match/:id
+    public async Task<IActionResult> DeleteMatchStatus(int statusId)
+    {
+        var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+        if (string.IsNullOrEmpty(currentUserIdStr) || !int.TryParse(currentUserIdStr, out int userId))
+        {
+            return Unauthorized("User is not authenticated or ID is invalid");
+        }
+
+        var matchStatus = await _context.Statuses
+            .FirstOrDefaultAsync(s => s.Id == statusId);
+        if (matchStatus == null)
+        {
+            return NotFound($"Match status with ID {statusId} was not found");
+        }
+
+        if (userRole == "candidate" ? matchStatus.CandidateId != userId : matchStatus.CompanyId != userId)
+        {
+            return Forbid("You do not have permission to delete this match status");
+        }
+
+        _context.Statuses.Remove(matchStatus);
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            message = "Match status successfully deleted",
+            deletedStatusId = statusId
+        });
     }
 }
