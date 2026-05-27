@@ -123,11 +123,17 @@ public class ChatController : ControllerBase
     [HttpGet("{id}")] // GET /api/chat/:id
     public async Task<IActionResult> GetChatHistory(int chatId)
     {
+        var allChats = await _context.Chats.ToListAsync();
+        Console.WriteLine($"🔍 Celkem je v tabulce Chats {allChats.Count} záznamů.");
+
+        foreach (var x in allChats)
+        {
+            Console.WriteLine($"-> V databázi vidím Chat se StatusId: '{x.StatusId}' (Typ v C#: {x.StatusId.GetType().Name})");
+        }
         var chat = await _context.Chats.FirstOrDefaultAsync(c => c.StatusId == chatId);
 
         if (chat == null)
         {
-            throw new Exception($"{chat.StatusId}");
             return Ok(new { chatId, messages = Array.Empty<object>() });
         }
 
