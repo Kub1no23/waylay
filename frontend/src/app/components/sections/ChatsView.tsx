@@ -363,6 +363,7 @@ export function ChatsView({ isCompany = false }: ChatsViewProps) {
 
     try {
       const response = await API.get<BackendChatHistory>(`/chat/${chatId}`);
+      console.log(response.data);
       return response.data ?? null;
     } catch (err) {
       console.error("Failed to load chat history", err);
