@@ -95,7 +95,7 @@ public class ChatController : ControllerBase
         return Ok(new { message = "Message sent successfully", data = message });
     }
 
-    [HttpPost("{id}/read")] // POST /api/chat/:id/read
+    [HttpPost("{chatId}/read")] // POST /api/chat/:id/read
     public async Task<IActionResult> MarkMessagesAsRead(int chatId)
     {
         var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
