@@ -1,12 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-interface JwtPayload {
-  userId: number;
-  role: "candidate" | "company";
-  email: string;
-  iat: number;
-  exp: number;
-}
 
 type AuthContextType = {
   token: string | null;
