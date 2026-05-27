@@ -10,6 +10,7 @@ public class Chat
 {
     [Key]
     [Column("status_id")]
+    [DatabaseGenerated(DatabaseGeneratedOption.None)]
     public int StatusId { get; set; }
 
     [ForeignKey(nameof(StatusId))]
@@ -20,4 +21,6 @@ public class Chat
 
     [Column("updated_at")]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    public ICollection<Message> Messages { get; set; } = new List<Message>();
 }

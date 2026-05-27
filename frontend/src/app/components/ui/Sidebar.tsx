@@ -18,6 +18,7 @@ import {
   UserIcon,
   LogOutIcon,
 } from "./Icons";
+import { useUser } from "../../../context/UserContext";
 
 export type Section = "requests" | "chats" | "profile" | "settings";
 
@@ -98,6 +99,8 @@ export function Sidebar({
 }: SidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const isMobile = useIsMobile();
+  const { userProfile } = useUser();
+  const profile = userProfile ?? user;
 
   const badgeValue = (key: string) => {
     if (key === "requestCount") return requestCount;
@@ -158,17 +161,21 @@ export function Sidebar({
       <div className="mt-4 rounded-3xl border border-border bg-card p-4">
         <div className="flex items-center gap-3">
           <Avatar className="size-11">
-            <AvatarImage src={user?.avatarUrl ?? ""} />
+            <AvatarImage src={""} />
             <AvatarFallback className="bg-muted text-muted-foreground text-sm">
-              {user ? `${user.firstName[0]}${user.lastName[0]}` : "JD"}
+              {profile
+                ? `${profile.firstName?.[0] ?? ""}${profile.lastName?.[0] ?? ""}`
+                : "JD"}
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-foreground">
-              {user ? `${user.firstName} ${user.lastName}` : "Your name"}
+              {profile
+                ? `${profile.firstName ?? ""} ${profile.lastName ?? ""}`.trim()
+                : "Your name"}
             </p>
             <p className="truncate text-xs text-muted-foreground">
-              {user?.email ?? "Not signed in"}
+              {profile?.email ?? "Not signed in"}
             </p>
           </div>
         </div>

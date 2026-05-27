@@ -3,6 +3,7 @@ using backend.Utils;
 using backend.Utils.DTO;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing.Matching;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.Controllers
@@ -60,14 +61,14 @@ namespace backend.Controllers
         }
 
         [HttpPost("register/candidate")]
-        public async Task<IActionResult> RegisterCandidate([FromBody] CandidateRegisterRequest req)
+        public async Task<IActionResult> RegisterCandidate([FromBody] CandidateAccReq req)
         {
             bool emailExists = await _context.Candidates.AnyAsync(c => c.Email == req.Email)
-                              || await _context.Companies.AnyAsync(c => c.Email == req.Email);
+                                || await _context.Companies.AnyAsync(c => c.Email == req.Email);
 
             if (emailExists)
             {
-                return BadRequest("Account with this email already exists.");
+                return BadRequest("Account with this email already exists");
             }
 
             string hashedPassword = Auth.HashPassword(req.Password);
@@ -91,7 +92,7 @@ namespace backend.Controllers
             return Ok(new { message = "Candidate registration successful" });
         }
         [HttpPost("register/company")]
-        public async Task<IActionResult> RegisterCompany([FromBody] CompanyRegisterRequest req)
+        public async Task<IActionResult> RegisterCompany([FromBody] CompanyAccReq req)
         {
             bool emailExists = await _context.Candidates.AnyAsync(c => c.Email == req.Email)
                               || await _context.Companies.AnyAsync(c => c.Email == req.Email);
