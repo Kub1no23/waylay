@@ -25,8 +25,8 @@ public class MatchController : ControllerBase
         _hubContext = hubContext;
     }
 
-    [HttpGet("lookup/{companyProfileId}")] // GET /api/match/lookup/:id
-    public async Task<IActionResult> MatchCandidatesToCompanyProfile(int profileId)
+    [HttpGet("lookup/{profileId}")] // GET /api/match/lookup/:id
+    public async Task<IActionResult> MatchCandidatesToCompanyProfile(int profileId) //companyProfileId
     {
         var companyFlags = await _context.ProfileFlags
             .Where(pf => pf.ProfileId == profileId && pf.Flag!.Embedding != null)
