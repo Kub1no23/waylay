@@ -13,7 +13,7 @@ import {
   CardTitle,
 } from "../components/ui/Card";
 import { EyeIcon, EyeOffIcon, Loader2Icon } from "lucide-react";
-import { useAuth } from "../../api/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -37,8 +37,6 @@ export default function LoginPage() {
 
     try {
       const res = await loginApi({ email, password });
-
-      // backend returns: { message, jwt }
       const token = res.jwt;
 
       if (!token) {
@@ -47,12 +45,19 @@ export default function LoginPage() {
 
       localStorage.setItem("token", token);
 
-      login(token);
+      // Capture the role directly from the login execution
+      const assignedRole = login(token);
 
-      navigate("/candidate/dashboard");
+      // Route dynamically based on the role
+      if (assignedRole === "company") {
+        navigate("/company/dashboard");
+      } else if (assignedRole === "candidate") {
+        navigate("/candidate/dashboard");
+      } else {
+        throw new Error("Unknown user role profile");
+      }
     } catch (err: any) {
       const message = err?.response?.data || err?.message || "Login failed";
-
       setError(message);
     } finally {
       setIsLoading(false);

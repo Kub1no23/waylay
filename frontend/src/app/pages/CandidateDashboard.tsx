@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "../../api/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import { useUser } from "../../context/UserContext";
 import { Sidebar, type Section } from "../components/ui/Sidebar";
 import { CandidateProfile } from "../components/sections/candidate/CandidateProfile";
@@ -117,14 +117,6 @@ export default function CandidateDashboard() {
         return null;
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/30 text-muted-foreground">
-        Loading dashboard...
-      </div>
-    );
-  }
 
   return (
     <Sidebar

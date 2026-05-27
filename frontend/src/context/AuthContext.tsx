@@ -13,7 +13,7 @@ type AuthContextType = {
   isAuthenticated: boolean;
   userId: number | null;
   role: "candidate" | "company" | null;
-  login: (token: string) => void;
+  login: (token: string) => "candidate" | "company" | null;
   logout: () => void;
 };
 
@@ -45,12 +45,26 @@ function parseJwt(token: string): CleanJwtPayload | null {
     const rawPayload = JSON.parse(new TextDecoder().decode(bytes));
 
     return {
-      id: parseInt(rawPayload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"] || rawPayload["nameid"]),
-      email: rawPayload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"] || rawPayload["email"],
-      role: rawPayload["http://schemas.microsoft.com/wsex/2008/06/identity/claims/role"] || rawPayload["role"] || rawPayload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"],
+      id: parseInt(
+        rawPayload[
+          "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
+        ] || rawPayload["nameid"],
+      ),
+      email:
+        rawPayload[
+          "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"
+        ] || rawPayload["email"],
+      role:
+        rawPayload[
+          "http://schemas.microsoft.com/wsex/2008/06/identity/claims/role"
+        ] ||
+        rawPayload["role"] ||
+        rawPayload[
+          "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+        ],
       exp: rawPayload.exp,
       iss: rawPayload.iss,
-      aud: rawPayload.aud
+      aud: rawPayload.aud,
     };
   } catch (error) {
     console.error("Failed to parse JWT", error);
@@ -80,10 +94,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("token", newToken);
     setToken(newToken);
     const payload = parseJwt(newToken);
+
     if (payload) {
       setUserId(payload.id);
-      setRole(payload.role as "candidate" | "company");
+
+      // Normalize casing (e.g., "Company" -> "company")
+      const userRole = payload.role?.toLowerCase() as "candidate" | "company";
+      setRole(userRole);
+
+      return userRole; // Return the role here so the login page can use it instantly
     }
+
+    return null;
   };
 
   const logout = () => {

@@ -3,9 +3,21 @@
 import { useState, type ReactNode } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./Avatar";
 import { Button } from "./Button";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "./Sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "./Sheet";
 import { useIsMobile } from "../../../hooks/useMobile";
-import { InboxIcon, MessageSquareIcon, SettingsIcon, UserIcon, LogOutIcon } from "./Icons";
+import {
+  InboxIcon,
+  MessageSquareIcon,
+  SettingsIcon,
+  UserIcon,
+  LogOutIcon,
+} from "./Icons";
 
 export type Section = "requests" | "chats" | "profile" | "settings";
 
@@ -100,8 +112,11 @@ export function Sidebar({
         onSectionChange(item.id);
         if (isMobile) setMobileOpen(false);
       }}
-      className={`w-full rounded-xl px-3 py-3 text-left transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ${activeSection === item.id ? "bg-sidebar-accent text-sidebar-accent-foreground" : "text-sidebar-foreground"
-        }`}
+      className={`w-full rounded-xl px-3 py-3 text-left transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ${
+        activeSection === item.id
+          ? "bg-sidebar-accent text-sidebar-accent-foreground"
+          : "text-sidebar-foreground"
+      }`}
     >
       <div className="flex items-center gap-3">
         {item.icon}
@@ -179,7 +194,11 @@ export function Sidebar({
 
       <div className="flex flex-1 flex-col">
         <div className="flex items-center justify-between border-b border-border bg-background px-4 py-3 md:hidden">
-          <Button variant="ghost" size="icon" onClick={() => setMobileOpen(true)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setMobileOpen(true)}
+          >
             <svg
               className="size-5"
               viewBox="0 0 24 24"
@@ -195,7 +214,9 @@ export function Sidebar({
             </svg>
             <span className="sr-only">Open menu</span>
           </Button>
-          <div className="text-sm font-semibold">{sectionTitle[activeSection]}</div>
+          <div className="text-sm font-semibold">
+            {sectionTitle[activeSection]}
+          </div>
           <Button variant="ghost" size="icon" onClick={onLogout}>
             <LogOutIcon className="size-4" />
             <span className="sr-only">Sign out</span>
@@ -205,7 +226,10 @@ export function Sidebar({
       </div>
 
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="bg-sidebar text-sidebar-foreground p-0">
+        <SheetContent
+          side="left"
+          className="bg-sidebar text-sidebar-foreground p-0"
+        >
           <SheetHeader className="border-b border-border px-4 py-4">
             <div className="flex items-center justify-between gap-4">
               <div>

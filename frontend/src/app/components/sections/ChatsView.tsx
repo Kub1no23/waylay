@@ -4,10 +4,16 @@ import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Button } from "../ui/Button";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/Avatar";
 import { ScrollArea } from "../ui/ScrollArea";
-import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "../ui/Empty";
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+} from "../ui/Empty";
 import type { Company } from "../../pages/CandidateDashboard";
 import { CompanyProfileView } from "./candidate/CompanyProfileView";
-import { useAuth } from "../../../api/AuthContext";
+import { useAuth } from "../../../context/AuthContext";
 import { API } from "../../../api/auth";
 
 // Icons
@@ -228,7 +234,9 @@ export function ChatsView({ isCompany = false }: ChatsViewProps) {
       };
     } catch (err) {
       console.error("Failed to load chat history", err);
-      setError(err instanceof Error ? err.message : "Failed to load chat history");
+      setError(
+        err instanceof Error ? err.message : "Failed to load chat history",
+      );
       return null;
     } finally {
     }
@@ -241,12 +249,12 @@ export function ChatsView({ isCompany = false }: ChatsViewProps) {
         prev.map((chat) =>
           chat.chatId === chatId
             ? {
-              ...chat,
-              unreadCount: 0,
-              latestMessage: chat.latestMessage
-                ? { ...chat.latestMessage, isRead: true }
-                : chat.latestMessage,
-            }
+                ...chat,
+                unreadCount: 0,
+                latestMessage: chat.latestMessage
+                  ? { ...chat.latestMessage, isRead: true }
+                  : chat.latestMessage,
+              }
             : chat,
         ),
       );
@@ -301,21 +309,21 @@ export function ChatsView({ isCompany = false }: ChatsViewProps) {
         setSelectedChat((prev) =>
           prev
             ? {
-              ...prev,
-              messages: [...prev.messages, sentMessage],
-              latestMessage: sentMessage,
-              updatedAt: sentMessage.createdAt,
-            }
+                ...prev,
+                messages: [...prev.messages, sentMessage],
+                latestMessage: sentMessage,
+                updatedAt: sentMessage.createdAt,
+              }
             : prev,
         );
         setChats((prev) =>
           prev.map((chat) =>
             chat.chatId === selectedChat.chatId
               ? {
-                ...chat,
-                latestMessage: sentMessage,
-                updatedAt: sentMessage.createdAt,
-              }
+                  ...chat,
+                  latestMessage: sentMessage,
+                  updatedAt: sentMessage.createdAt,
+                }
               : chat,
           ),
         );
@@ -396,18 +404,23 @@ export function ChatsView({ isCompany = false }: ChatsViewProps) {
       <div className="grid gap-2 p-4 lg:p-6">
         {chats.map((chat) => {
           const name = isCompany
-            ? chat.candidateName ?? chat.displayName ?? `Chat ${chat.chatId}`
-            : chat.company?.name ?? chat.displayName ?? `Chat ${chat.chatId}`;
-          const avatar = isCompany ? chat.candidateAvatar ?? chat.avatarUrl : chat.company?.logo ?? chat.avatarUrl;
+            ? (chat.candidateName ?? chat.displayName ?? `Chat ${chat.chatId}`)
+            : (chat.company?.name ?? chat.displayName ?? `Chat ${chat.chatId}`);
+          const avatar = isCompany
+            ? (chat.candidateAvatar ?? chat.avatarUrl)
+            : (chat.company?.logo ?? chat.avatarUrl);
           const initial = name ? name[0] : "?";
-          const unreadCount = chat.unreadCount ?? (chat.latestMessage && !chat.latestMessage.isRead ? 1 : 0);
+          const unreadCount =
+            chat.unreadCount ??
+            (chat.latestMessage && !chat.latestMessage.isRead ? 1 : 0);
           const previewDate = chat.latestMessage?.createdAt ?? chat.updatedAt;
 
-          const senderPrefix = chat.latestMessage?.sender === auth.userId
-            ? "You"
-            : isCompany
-              ? chat.candidateName?.split(" ")[0] || "Candidate"
-              : chat.recruiterName?.split(" ")[0] || "Recruiter";
+          const senderPrefix =
+            chat.latestMessage?.sender === auth.userId
+              ? "You"
+              : isCompany
+                ? chat.candidateName?.split(" ")[0] || "Candidate"
+                : chat.recruiterName?.split(" ")[0] || "Recruiter";
 
           return (
             <button
@@ -446,12 +459,14 @@ export function ChatsView({ isCompany = false }: ChatsViewProps) {
                   </div>
 
                   <p
-                    className={`mt-1.5 text-sm truncate ${unreadCount > 0
-                      ? "text-foreground font-medium"
-                      : "text-muted-foreground"
-                      }`}
+                    className={`mt-1.5 text-sm truncate ${
+                      unreadCount > 0
+                        ? "text-foreground font-medium"
+                        : "text-muted-foreground"
+                    }`}
                   >
-                    {senderPrefix}: {chat.latestMessage?.content ?? "No messages yet"}
+                    {senderPrefix}:{" "}
+                    {chat.latestMessage?.content ?? "No messages yet"}
                   </p>
                 </div>
               </div>
@@ -505,9 +520,11 @@ function ChatThread({
   };
 
   const name = isCompany
-    ? chat.candidateName ?? chat.displayName ?? `Chat ${chat.chatId}`
-    : chat.company?.name ?? chat.displayName ?? `Chat ${chat.chatId}`;
-  const avatar = isCompany ? chat.candidateAvatar ?? chat.avatarUrl : chat.company?.logo ?? chat.avatarUrl;
+    ? (chat.candidateName ?? chat.displayName ?? `Chat ${chat.chatId}`)
+    : (chat.company?.name ?? chat.displayName ?? `Chat ${chat.chatId}`);
+  const avatar = isCompany
+    ? (chat.candidateAvatar ?? chat.avatarUrl)
+    : (chat.company?.logo ?? chat.avatarUrl);
   const initial = name ? name[0] : "?";
   const subtitle = chat.role
     ? isCompany
@@ -555,7 +572,9 @@ function ChatThread({
       <div className="flex-1 overflow-auto p-4" ref={scrollRef}>
         <div className="mx-auto max-w-2xl space-y-3">
           {chat.messages.map((msg: Message) => {
-            const isIncoming = currentUserId ? msg.sender !== currentUserId : true;
+            const isIncoming = currentUserId
+              ? msg.sender !== currentUserId
+              : true;
 
             return (
               <div
@@ -563,19 +582,21 @@ function ChatThread({
                 className={`flex ${isIncoming ? "justify-start" : "justify-end"}`}
               >
                 <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${isIncoming
-                    ? "bg-card border border-border text-foreground rounded-bl-md"
-                    : "bg-primary text-primary-foreground rounded-br-md"
-                    }`}
+                  className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${
+                    isIncoming
+                      ? "bg-card border border-border text-foreground rounded-bl-md"
+                      : "bg-primary text-primary-foreground rounded-br-md"
+                  }`}
                 >
                   <p className="text-sm whitespace-pre-wrap leading-relaxed">
                     {msg.content}
                   </p>
                   <p
-                    className={`mt-1.5 text-[10px] ${isIncoming
-                      ? "text-muted-foreground"
-                      : "text-primary-foreground/70"
-                      }`}
+                    className={`mt-1.5 text-[10px] ${
+                      isIncoming
+                        ? "text-muted-foreground"
+                        : "text-primary-foreground/70"
+                    }`}
                   >
                     {formatMessageTime(new Date(msg.createdAt))}
                   </p>
