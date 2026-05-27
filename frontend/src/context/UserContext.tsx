@@ -1,11 +1,10 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-<<<<<<< HEAD
-import { HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
-import { useAuth } from "./AuthContext";
-=======
-import { HubConnection, HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
-import { useAuth } from "../api/AuthContext";
->>>>>>> 562cb7f9f29f702a0a6fae02338f933dfcbe7e24
+import {
+  HubConnection,
+  HubConnectionBuilder,
+  LogLevel,
+} from "@microsoft/signalr";
+import { useAuth } from "../context/AuthContext";
 import { API } from "../api/auth";
 
 interface UserProfile {
@@ -30,58 +29,25 @@ interface MatchStatus {
   updatedAt: string;
 }
 
-<<<<<<< HEAD
-interface LatestChatMessage {
-  id: number;
-  sender: number;
-  content: string;
-  createdAt: string;
-  isRead: boolean;
-}
-
-interface ChatSummary {
-  chatId: number;
-  latestMessage?: LatestChatMessage | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
 type UserContextType = {
   userProfile: UserProfile | null;
   inboxCount: number;
   unreadCount: number;
   loading: boolean;
   error: string | null;
-=======
-type UserContextType = {
-    userProfile: UserProfile | null;
-    inboxCount: number;
-    unreadCount: number;
-    loading: boolean;
-    error: string | null;
-    connection: HubConnection | null;
->>>>>>> 562cb7f9f29f702a0a6fae02338f933dfcbe7e24
+  connection: HubConnection | null;
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
-<<<<<<< HEAD
   const auth = useAuth();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [inboxCount, setInboxCount] = useState(0);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-=======
-    const auth = useAuth();
-    const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-    const [inboxCount, setInboxCount] = useState(0);
-    const [unreadCount, setUnreadCount] = useState(0);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [connection, setConnection] = useState<HubConnection | null>(null);
->>>>>>> 562cb7f9f29f702a0a6fae02338f933dfcbe7e24
+  const [connection, setConnection] = useState<HubConnection | null>(null);
 
   useEffect(() => {
     if (!auth.isAuthenticated || !auth.userId || !auth.role) {
@@ -92,18 +58,18 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const baseUrl = (API.defaults.baseURL ?? "").replace(/\/api$/, "");
     const hubUrl = baseUrl ? `${baseUrl}/api/hub/chat` : "/api/hub/chat";
 
-    let connection = new HubConnectionBuilder()
+    let conn = new HubConnectionBuilder()
       .withUrl(hubUrl, {
         accessTokenFactory: () => auth.token ?? "",
       })
       .withAutomaticReconnect()
       .configureLogging(LogLevel.Information)
       .build();
-    connection.on("ReceiveMessage", (payload: unknown) => {
+    conn.on("ReceiveMessage", (payload: unknown) => {
       console.log("ReceiveMessage", payload);
       setUnreadCount((count) => count + 1);
     });
-    connection.on("Notification_Match", (payload: unknown) => {
+    conn.on("Notification_Match", (payload: unknown) => {
       console.log("Notification_Match", payload);
       setInboxCount((count) => count + 1);
     });
@@ -119,10 +85,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         const profileResponse = await API.get<UserProfile>(profileEndpoint);
         setUserProfile(profileResponse.data);
 
-        // Fetch match and chat counts
-        const [matchResponse, chatResponse] = await Promise.all([
+        // Fetch match and unread chat counts
+        const [matchResponse, chatCountResponse] = await Promise.all([
           API.get<MatchStatus[]>("/match"),
-          API.get<ChatSummary[]>("/chat"),
+          API.get<{ count: number }>("/chat/count"),
         ]);
 
         if (matchResponse.data) {
@@ -132,16 +98,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           setInboxCount(pendingMatches.length);
         }
 
-        if (chatResponse.data) {
-          const unreadChats = chatResponse.data.reduce((sum, chat) => {
-            return (
-              sum + (chat.latestMessage && !chat.latestMessage.isRead ? 1 : 0)
-            );
-          }, 0);
-          setUnreadCount(unreadChats);
+        if (chatCountResponse.data) {
+          setUnreadCount(chatCountResponse.data.count ?? 0);
         }
 
-<<<<<<< HEAD
         setError(null);
       } catch (err) {
         console.error("Failed to load user data", err);
@@ -150,42 +110,26 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       }
     };
-=======
-        let conn = new HubConnectionBuilder()
-            .withUrl(hubUrl, {
-                accessTokenFactory: () => auth.token ?? "",
-            })
-            .withAutomaticReconnect()
-            .configureLogging(LogLevel.Information)
-            .build();
-        conn.on("ReceiveMessage", (payload: unknown) => {
-            console.log("ReceiveMessage", payload);
-            setUnreadCount((count) => count + 1);
-        });
-        conn.on("Notification_Match", (payload: unknown) => {
-            console.log("Notification_Match", payload);
-            setInboxCount((count) => count + 1);
-        });
-        setConnection(conn);
->>>>>>> 562cb7f9f29f702a0a6fae02338f933dfcbe7e24
 
     const startHub = async () => {
       try {
-        await connection.start();
+        await conn.start();
         console.log("Chat hub connected");
+        setConnection(conn);
       } catch (err) {
         console.error("Chat hub connection failed", err);
+        setConnection(null);
       }
     };
 
     void startHub();
     void loadUserData();
 
-<<<<<<< HEAD
     return () => {
-      void connection.stop().catch((err: unknown) => {
+      void connection?.stop().catch((err: unknown) => {
         console.error("Chat hub disconnect failed", err);
       });
+      setConnection(null);
     };
   }, [auth.isAuthenticated, auth.userId, auth.role, auth.token]);
 
@@ -197,75 +141,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         unreadCount,
         loading,
         error,
+        connection,
       }}
     >
       {children}
     </UserContext.Provider>
   );
-=======
-                // Fetch match and unread chat counts
-                const [matchResponse, chatCountResponse] = await Promise.all([
-                    API.get<MatchStatus[]>("/match"),
-                    API.get<{ count: number }>("/chat/count"),
-                ]);
-
-                if (matchResponse.data) {
-                    const pendingMatches = matchResponse.data.filter(
-                        (match) => match.pending
-                    );
-                    setInboxCount(pendingMatches.length);
-                }
-
-                if (chatCountResponse.data) {
-                    setUnreadCount(chatCountResponse.data.count ?? 0);
-                }
-
-                setError(null);
-            } catch (err) {
-                console.error("Failed to load user data", err);
-                setError(err instanceof Error ? err.message : "Unknown error");
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        const startHub = async () => {
-            try {
-                await conn.start();
-                console.log("Chat hub connected");
-                setConnection(conn);
-            } catch (err) {
-                console.error("Chat hub connection failed", err);
-                setConnection(null);
-            }
-        };
-
-        void startHub();
-        void loadUserData();
-
-        return () => {
-            void connection?.stop().catch((err: unknown) => {
-                console.error("Chat hub disconnect failed", err);
-            });
-            setConnection(null);
-        };
-    }, [auth.isAuthenticated, auth.userId, auth.role, auth.token]);
-
-    return (
-        <UserContext.Provider
-            value={{
-                userProfile,
-                inboxCount,
-                unreadCount,
-                loading,
-                error,
-                connection,
-            }}
-        >
-            {children}
-        </UserContext.Provider>
-    );
->>>>>>> 562cb7f9f29f702a0a6fae02338f933dfcbe7e24
 }
 
 export function useUser() {
