@@ -48,7 +48,7 @@ public class ChatController : ControllerBase
             return NotFound("No match status found between you and the target user");
         }
 
-        if (statusRecord.CandidateInterested && statusRecord.CompanyInterested)
+        if (!statusRecord.CandidateInterested || !statusRecord.CompanyInterested)
         {
             return BadRequest("You can only chat with users where a mutual Match has been established");
         }
