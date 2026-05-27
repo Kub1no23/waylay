@@ -120,17 +120,12 @@ public class ChatController : ControllerBase
         return Ok(new { message = "Messages marked as read" });
     }
 
-    [HttpGet("{id}")] // GET /api/chat/:id
+    [HttpGet("{chatId}")] // GET /api/chat/:id
     public async Task<IActionResult> GetChatHistory(int chatId)
     {
-        var allChats = await _context.Chats.ToListAsync();
-        Console.WriteLine($"🔍 Celkem je v tabulce Chats {allChats.Count} záznamů.");
-
-        foreach (var x in allChats)
-        {
-            Console.WriteLine($"-> V databázi vidím Chat se StatusId: '{x.StatusId}' (Typ v C#: {x.StatusId.GetType().Name})");
-        }
-        var chat = await _context.Chats.FirstOrDefaultAsync(c => c.StatusId == chatId);
+        var chat = await _context.Chats
+            .Include(c => c.Messages.OrderBy(m => m.CreatedAt))
+            .FirstOrDefaultAsync(c => c.StatusId == chatId);
 
         if (chat == null)
         {
@@ -142,18 +137,14 @@ public class ChatController : ControllerBase
             chatId,
             chat.CreatedAt,
             chat.UpdatedAt,
-            Messages = _context.Messages
-                .Where(m => m.ChatId == chat.StatusId)
-                .OrderBy(m => m.CreatedAt)
-                .Select(m => new
-                {
-                    m.Id,
-                    m.Sender,
-                    m.Content,
-                    m.CreatedAt,
-                    m.IsRead
-                })
-                .ToList()
+            Messages = chat.Messages.Select(m => new
+            {
+                m.Id,
+                m.Sender,
+                m.Content,
+                m.CreatedAt,
+                m.IsRead
+            }).ToList()
         };
 
         return Ok(history);
