@@ -123,9 +123,7 @@ public class ChatController : ControllerBase
     [HttpGet("{id}")] // GET /api/chat/:id
     public async Task<IActionResult> GetChatHistory(int chatId)
     {
-        var chat = await _context.Chats
-            .Include(c => c.Messages.OrderBy(m => m.CreatedAt))
-            .FirstOrDefaultAsync(c => c.StatusId == chatId);
+        var chat = await _context.Chats.FirstOrDefaultAsync(c => c.StatusId == chatId);
 
         if (chat == null)
         {
@@ -137,14 +135,18 @@ public class ChatController : ControllerBase
             chatId,
             chat.CreatedAt,
             chat.UpdatedAt,
-            Messages = chat.Messages.Select(m => new
-            {
-                m.Id,
-                m.Sender,
-                m.Content,
-                m.CreatedAt,
-                m.IsRead
-            })
+            Messages = _context.Messages
+                .Where(m => m.ChatId == chat.StatusId)
+                .OrderBy(m => m.CreatedAt)
+                .Select(m => new
+                {
+                    m.Id,
+                    m.Sender,
+                    m.Content,
+                    m.CreatedAt,
+                    m.IsRead
+                })
+                .ToList()
         };
 
         return Ok(history);
