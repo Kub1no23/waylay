@@ -91,6 +91,50 @@ public class FlagController : ControllerBase
         });
     }
 
+    [HttpGet("/api/profile/{profileId}/flag")] // GET /api/profile/:profileId/flag
+    public async Task<IActionResult> GetProfileFlags(int profileId)
+    {
+        var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var currentUserRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+        if (currentUserIdStr == null || currentUserRole == null)
+        {
+            return Unauthorized("User is not authenticated");
+        }
+        int currentUserId = int.Parse(currentUserIdStr);
+
+
+        var profile = await _context.Profiles
+            .Select(p => new { p.Id, p.OwnerId, p.OwnerType })
+            .FirstOrDefaultAsync(p => p.Id == profileId);
+
+        if (profile == null)
+        {
+            return NotFound($"Profile with ID {profileId} not found");
+        }
+
+        if (profile.OwnerId != currentUserId || profile.OwnerType != currentUserRole)
+        {
+            return Forbid();
+        }
+
+        var flags = await _context.ProfileFlags
+            .Where(pf => pf.ProfileId == profileId)
+            .Select(pf => new
+            {
+                FlagId = pf.FlagId,
+                Name = pf.Flag!.Name
+            })
+            .ToListAsync();
+
+        return Ok(new
+        {
+            profileId = profileId,
+            totalFlagsCount = flags.Count,
+            flags = flags
+        });
+    }
+
     [HttpDelete("/api/profile/{profileId}/flag")] // DELETE /api/profile/:id/flag
     public async Task<IActionResult> DeleteFlagsFromProfile(int profileId, [FromBody] DeleteFlagsReq dto)
     {
