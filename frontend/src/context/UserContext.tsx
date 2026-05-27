@@ -69,7 +69,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             console.log("Notification_Match", payload);
             setInboxCount((count) => count + 1);
         });
-        setConnection(conn);
 
         const loadUserData = async () => {
             try {
@@ -112,8 +111,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             try {
                 await conn.start();
                 console.log("Chat hub connected");
+                setConnection(conn);
             } catch (err) {
                 console.error("Chat hub connection failed", err);
+                setConnection(null);
             }
         };
 
@@ -121,7 +122,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         void loadUserData();
 
         return () => {
-            void conn.stop().catch((err: unknown) => {
+            void connection?.stop().catch((err: unknown) => {
                 console.error("Chat hub disconnect failed", err);
             });
             setConnection(null);

@@ -376,8 +376,10 @@ export function ChatsView({ isCompany = false }: ChatsViewProps) {
     try {
       await API.post(`/chat/${chatId}/read`);
       try {
-        if (connection) {
+        if (connection?.state === "Connected") {
           await connection.invoke("SendReadReceipt", String(chatId));
+        } else {
+          console.warn("Hub not connected, skipping SendReadReceipt");
         }
       } catch (wsErr) {
         console.error("Failed to send read receipt via hub", wsErr);
@@ -432,7 +434,6 @@ export function ChatsView({ isCompany = false }: ChatsViewProps) {
     if (!selectedChat) {
       return;
     }
-
     if (!auth.userId) {
       setError("Unable to resolve current user.");
       return;
