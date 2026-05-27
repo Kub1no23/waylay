@@ -155,29 +155,102 @@ public class ChatController : ControllerBase
     {
         var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         var role = User.FindFirst(ClaimTypes.Role)?.Value;
-        if (userIdStr == null) return Unauthorized();
+
+        if (userIdStr == null || role == null) return Unauthorized();
         int userId = int.Parse(userIdStr);
 
-        var chats = await _context.Chats
-            .Where(c => role == "candidate" ? c.Status!.CandidateId == userId : c.Status!.CompanyId == userId)
-            .Include(c => c.Messages.OrderByDescending(m => m.CreatedAt).Take(1)) // Latest message for preview
-            .ToListAsync();
-
-        var result = chats.Select(c => new
+        if (role == "candidate")
         {
-            chatId = c.StatusId,
-            latestMessage = c.Messages.FirstOrDefault() != null ? new
-            {
-                c.Messages.First().Id,
-                c.Messages.First().Sender,
-                c.Messages.First().Content,
-                c.Messages.First().CreatedAt,
-                c.Messages.First().IsRead
-            } : null,
-            c.CreatedAt,
-            c.UpdatedAt
-        });
+            var candidateChats = await _context.Chats
+                .Where(c => c.Status!.CandidateId == userId)
+                .Include(c => c.Messages)
+                .Select(c => new
+                {
+                    chatId = c.StatusId,
+                    companyId = c.Status!.CompanyId,
+                    companyName = _context.Companies.Where(co => co.Id == c.Status.CompanyId).Select(co => co.Name).FirstOrDefault(),
+                    profileTitle = _context.Profiles.Where(p => p.OwnerId == c.Status.CompanyId).Select(p => p.Title).FirstOrDefault(),
 
-        return Ok(result);
+                    latestMessage = c.Messages.OrderByDescending(m => m.CreatedAt).Select(m => new
+                    {
+                        m.Id,
+                        m.Sender,
+                        m.Content,
+                        m.CreatedAt,
+                        m.IsRead
+                    }).FirstOrDefault(),
+
+                    c.CreatedAt,
+                    c.UpdatedAt
+                })
+                .ToListAsync();
+
+            return Ok(candidateChats);
+        }
+
+        if (role == "company")
+        {
+            var companyChats = await _context.Chats
+                .Where(c => c.Status!.CompanyId == userId)
+                .Include(c => c.Messages)
+                .Select(c => new
+                {
+                    chatId = c.StatusId,
+                    candidateId = c.Status!.CandidateId,
+                    candidateName = _context.Candidates.Where(cand => cand.Id == c.Status.CandidateId).Select(cand => cand.FirstName + " " + cand.LastName).FirstOrDefault(),
+                    profileTitle = _context.Profiles.Where(p => p.OwnerId == c.Status.CompanyId).Select(p => p.Title).FirstOrDefault(),
+
+                    latestMessage = c.Messages.OrderByDescending(m => m.CreatedAt).Select(m => new
+                    {
+                        m.Id,
+                        m.Sender,
+                        m.Content,
+                        m.CreatedAt,
+                        m.IsRead
+                    }).FirstOrDefault(),
+
+                    c.CreatedAt,
+                    c.UpdatedAt
+                })
+                .ToListAsync();
+
+            return Ok(companyChats);
+        }
+
+        return BadRequest("Invalid user role");
+    }
+
+    [HttpGet("count")] // GET /api/chat/count
+    public async Task<IActionResult> GetUnreadChatsCount()
+    {
+        var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var role = User.FindFirst(ClaimTypes.Role)?.Value;
+
+        if (userIdStr == null || role == null) return Unauthorized();
+        int userId = int.Parse(userIdStr);
+
+        int unreadCount = 0;
+
+        if (role == "candidate")
+        {
+            unreadCount = await _context.Chats
+                .Where(c => c.Status!.CandidateId == userId)
+                .Where(c => c.Messages.Any(m => !m.IsRead && m.Sender != userId))
+                .CountAsync();
+
+            return Ok(new { count = unreadCount });
+        }
+
+        if (role == "company")
+        {
+            unreadCount = await _context.Chats
+                .Where(c => c.Status!.CompanyId == userId)
+                .Where(c => c.Messages.Any(m => !m.IsRead && m.Sender != userId))
+                .CountAsync();
+
+            return Ok(new { count = unreadCount });
+        }
+
+        return BadRequest("Invalid user role");
     }
 }
