@@ -127,6 +127,7 @@ public class ChatController : ControllerBase
 
         if (chat == null)
         {
+            throw new Exception($"{chat.StatusId}");
             return Ok(new { chatId, messages = Array.Empty<object>() });
         }
 
