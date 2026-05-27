@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
+import { HubConnection, HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
 import { useAuth } from "../api/AuthContext";
 import { API } from "../api/auth";
 
@@ -46,6 +46,7 @@ type UserContextType = {
     unreadCount: number;
     loading: boolean;
     error: string | null;
+    connection: HubConnection | null;
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -57,6 +58,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const [unreadCount, setUnreadCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [connection, setConnection] = useState<HubConnection | null>(null);
 
     useEffect(() => {
         if (!auth.isAuthenticated || !auth.userId || !auth.role) {
@@ -67,21 +69,22 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         const baseUrl = (API.defaults.baseURL ?? "").replace(/\/api$/, "");
         const hubUrl = baseUrl ? `${baseUrl}/api/hub/chat` : "/api/hub/chat";
 
-        let connection = new HubConnectionBuilder()
+        let conn = new HubConnectionBuilder()
             .withUrl(hubUrl, {
                 accessTokenFactory: () => auth.token ?? "",
             })
             .withAutomaticReconnect()
             .configureLogging(LogLevel.Information)
             .build();
-        connection.on("ReceiveMessage", (payload: unknown) => {
+        conn.on("ReceiveMessage", (payload: unknown) => {
             console.log("ReceiveMessage", payload);
             setUnreadCount((count) => count + 1);
         });
-        connection.on("Notification_Match", (payload: unknown) => {
+        conn.on("Notification_Match", (payload: unknown) => {
             console.log("Notification_Match", payload);
             setInboxCount((count) => count + 1);
         });
+        setConnection(conn);
 
         const loadUserData = async () => {
             try {
@@ -94,10 +97,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 const profileResponse = await API.get<UserProfile>(profileEndpoint);
                 setUserProfile(profileResponse.data);
 
-                // Fetch match and chat counts
-                const [matchResponse, chatResponse] = await Promise.all([
+                // Fetch match and unread chat counts
+                const [matchResponse, chatCountResponse] = await Promise.all([
                     API.get<MatchStatus[]>("/match"),
-                    API.get<ChatSummary[]>("/chat"),
+                    API.get<{ count: number }>("/chat/count"),
                 ]);
 
                 if (matchResponse.data) {
@@ -107,11 +110,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                     setInboxCount(pendingMatches.length);
                 }
 
-                if (chatResponse.data) {
-                    const unreadChats = chatResponse.data.reduce((sum, chat) => {
-                        return sum + (chat.latestMessage && !chat.latestMessage.isRead ? 1 : 0);
-                    }, 0);
-                    setUnreadCount(unreadChats);
+                if (chatCountResponse.data) {
+                    setUnreadCount(chatCountResponse.data.count ?? 0);
                 }
 
                 setError(null);
@@ -125,7 +125,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
         const startHub = async () => {
             try {
-                await connection.start();
+                await conn.start();
                 console.log("Chat hub connected");
             } catch (err) {
                 console.error("Chat hub connection failed", err);
@@ -136,9 +136,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         void loadUserData();
 
         return () => {
-            void connection.stop().catch((err: unknown) => {
+            void conn.stop().catch((err: unknown) => {
                 console.error("Chat hub disconnect failed", err);
             });
+            setConnection(null);
         };
     }, [auth.isAuthenticated, auth.userId, auth.role, auth.token]);
 
@@ -150,6 +151,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 unreadCount,
                 loading,
                 error,
+                connection,
             }}
         >
             {children}
