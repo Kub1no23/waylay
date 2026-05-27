@@ -91,7 +91,7 @@ public class FlagController : ControllerBase
         });
     }
 
-    [HttpDelete("/api/profile/{id}/flag")] // DELETE /api/profile/:id/flag
+    [HttpDelete("/api/profile/{profileId}/flag")] // DELETE /api/profile/:id/flag
     public async Task<IActionResult> DeleteFlagsFromProfile(int profileId, [FromBody] DeleteFlagsReq dto)
     {
         var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
