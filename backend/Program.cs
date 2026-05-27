@@ -13,6 +13,10 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("GcpPostgresConnection"),
         o => o.UseVector()));
 builder.Services.AddOpenApi();
+var allowedOrigins = new[] {
+    "http://localhost:5173",
+    "https://frontend-739221723573.europe-west3.run.app"
+};
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -20,6 +24,13 @@ builder.Services.AddCors(options =>
         policy.AllowAnyOrigin()
               .AllowAnyMethod()
               .AllowAnyHeader();
+    });
+    options.AddPolicy("SignalRCors", policy =>
+    {
+        policy.WithOrigins(allowedOrigins)
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 builder.Services.AddAuthentication(options =>
