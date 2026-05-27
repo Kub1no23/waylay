@@ -25,7 +25,6 @@ interface MatchStatus {
     updatedAt: string;
 }
 
-
 type UserContextType = {
     userProfile: UserProfile | null;
     inboxCount: number;
