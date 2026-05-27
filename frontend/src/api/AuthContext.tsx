@@ -1,13 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-interface JwtPayload {
-  userId: number;
-  role: "candidate" | "company";
-  email: string;
-  iat: number;
-  exp: number;
-}
-
 type AuthContextType = {
   token: string | null;
   isAuthenticated: boolean;
@@ -19,7 +11,7 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-interface CleanJwtPayload {
+interface JwtPayload {
   id: number;
   email: string;
   role: string;
@@ -28,7 +20,7 @@ interface CleanJwtPayload {
   aud: string;
 }
 
-function parseJwt(token: string): CleanJwtPayload | null {
+function parseJwt(token: string): JwtPayload | null {
   try {
     if (!token) return null;
 

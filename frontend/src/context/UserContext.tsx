@@ -25,21 +25,6 @@ interface MatchStatus {
     updatedAt: string;
 }
 
-interface LatestChatMessage {
-    id: number;
-    sender: number;
-    content: string;
-    createdAt: string;
-    isRead: boolean;
-}
-
-interface ChatSummary {
-    chatId: number;
-    latestMessage?: LatestChatMessage | null;
-    createdAt: string;
-    updatedAt: string;
-}
-
 type UserContextType = {
     userProfile: UserProfile | null;
     inboxCount: number;
