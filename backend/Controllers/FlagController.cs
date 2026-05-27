@@ -24,7 +24,7 @@ public class FlagController : ControllerBase
         _configuration = configuration;
     }
 
-    [HttpPost("/api/profile/{id}/flag")] // POST /api/profile/:id/flag
+    [HttpPost("/api/profile/{profileId}/flag")] // POST /api/profile/:id/flag
     public async Task<IActionResult> AssignFlagsToProfile(int profileId, [FromBody] AssignFlagsReq dto)
     {
         var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
