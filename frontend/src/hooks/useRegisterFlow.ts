@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { AccountType, RegisterStep } from "../libs/types";
-import type { RegisterProgressState } from "../features/auth/register/registerProgress";
+import type { RegisterProgressState } from "../app/utils/registerProgress";
 
 export function useRegisterFlow() {
   const [step, setStep] = useState<RegisterStep>("select-type");

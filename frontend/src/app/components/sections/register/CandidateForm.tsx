@@ -178,6 +178,38 @@ export function CandidateForm({
                 placeholder="Short professional summary..."
               />
             </div>
+
+            {/* GitHub URL input field */}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">
+                GitHub Profile URL
+              </label>
+              <input
+                type="url"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm"
+                value={data.githubUrl}
+                onChange={(e) =>
+                  setData((p) => ({ ...p, githubUrl: e.target.value }))
+                }
+                placeholder="https://github.com/yourusername"
+              />
+            </div>
+
+            {/* Portfolio URL input field */}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">
+                Portfolio Website URL
+              </label>
+              <input
+                type="url"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm"
+                value={data.portfolioUrl}
+                onChange={(e) =>
+                  setData((p) => ({ ...p, portfolioUrl: e.target.value }))
+                }
+                placeholder="https://yourportfolio.com"
+              />
+            </div>
           </div>
         </details>
 

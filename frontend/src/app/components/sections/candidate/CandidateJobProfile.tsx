@@ -86,7 +86,7 @@ const initialProfile: ProfileData = {
   portfolioUrl: "https://alexjohnson.dev",
 };
 
-export function CandidateProfile() {
+export default function CandidateJobProfile() {
   const [profile, setProfile] = useState<ProfileData>(initialProfile);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);

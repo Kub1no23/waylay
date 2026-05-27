@@ -18,8 +18,19 @@ import {
   UserIcon,
   LogOutIcon,
 } from "./Icons";
+// 👈 Import the icons needed for the company views
+import { SearchIcon, BriefcaseIcon } from "lucide-react";
 
-export type Section = "requests" | "chats" | "profile" | "settings";
+// 1. Expand the Section type to include company views
+export type Section =
+  | "requests"
+  | "chats"
+  | "job-profile"
+  | "profile"
+  | "settings"
+  | "search"
+  | "inbox"
+  | "job-offers";
 
 export interface SidebarUser {
   firstName: string;
@@ -29,6 +40,7 @@ export interface SidebarUser {
 }
 
 interface SidebarProps {
+  role?: "candidate" | "company"; // 2. Add role prop
   activeSection: Section;
   onSectionChange: (section: Section) => void;
   requestCount: number;
@@ -45,49 +57,19 @@ type NavItem = {
   badgeKey?: "requestCount" | "unreadCount";
 };
 
-const groups: Array<{ title: string; items: NavItem[] }> = [
-  {
-    title: "Messages",
-    items: [
-      {
-        id: "requests",
-        label: "Requests",
-        icon: <InboxIcon className="size-4" />,
-        badgeKey: "requestCount",
-      },
-      {
-        id: "chats",
-        label: "Chats",
-        icon: <MessageSquareIcon className="size-4" />,
-        badgeKey: "unreadCount",
-      },
-    ],
-  },
-  {
-    title: "Account",
-    items: [
-      {
-        id: "profile",
-        label: "Profile",
-        icon: <UserIcon className="size-4" />,
-      },
-      {
-        id: "settings",
-        label: "Settings",
-        icon: <SettingsIcon className="size-4" />,
-      },
-    ],
-  },
-];
-
 const sectionTitle: Record<Section, string> = {
   requests: "Requests",
   chats: "Messages",
+  "job-profile": "Job Profile",
   profile: "Profile",
   settings: "Settings",
+  search: "Candidate Search",
+  inbox: "Inbox",
+  "job-offers": "Job Offers",
 };
 
 export function Sidebar({
+  role = "candidate", // Default to candidate
   activeSection,
   onSectionChange,
   requestCount,
@@ -98,6 +80,93 @@ export function Sidebar({
 }: SidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const isMobile = useIsMobile();
+
+  // 3. Dynamically define groups based on user role
+  const groups: Array<{ title: string; items: NavItem[] }> =
+    role === "company"
+      ? [
+          {
+            title: "Recruitment",
+            items: [
+              {
+                id: "search",
+                label: "Candidate Search",
+                icon: <SearchIcon className="size-4" />,
+              },
+              {
+                id: "job-offers",
+                label: "Job Offers",
+                icon: <BriefcaseIcon className="size-4" />,
+              },
+            ],
+          },
+          {
+            title: "Messages",
+            items: [
+              {
+                id: "inbox",
+                label: "Inbox",
+                icon: <InboxIcon className="size-4" />,
+                badgeKey: "requestCount",
+              },
+              {
+                id: "chats",
+                label: "Chats",
+                icon: <MessageSquareIcon className="size-4" />,
+                badgeKey: "unreadCount",
+              },
+            ],
+          },
+          {
+            title: "Account",
+            items: [
+              {
+                id: "profile",
+                label: "Profile",
+                icon: <UserIcon className="size-4" />,
+              },
+              {
+                id: "settings",
+                label: "Settings",
+                icon: <SettingsIcon className="size-4" />,
+              },
+            ],
+          },
+        ]
+      : [
+          {
+            title: "Messages",
+            items: [
+              {
+                id: "requests",
+                label: "Requests",
+                icon: <InboxIcon className="size-4" />,
+                badgeKey: "requestCount",
+              },
+              {
+                id: "chats",
+                label: "Chats",
+                icon: <MessageSquareIcon className="size-4" />,
+                badgeKey: "unreadCount",
+              },
+            ],
+          },
+          {
+            title: "Account",
+            items: [
+              {
+                id: "profile",
+                label: "Profile",
+                icon: <UserIcon className="size-4" />,
+              },
+              {
+                id: "settings",
+                label: "Settings",
+                icon: <SettingsIcon className="size-4" />,
+              },
+            ],
+          },
+        ];
 
   const badgeValue = (key: string) => {
     if (key === "requestCount") return requestCount;
@@ -138,7 +207,10 @@ export function Sidebar({
         </div>
         <div>
           <p className="text-sm font-semibold text-foreground">Waylay</p>
-          <p className="text-xs text-muted-foreground">Candidate dashboard</p>
+          {/* 4. Dynamic header subtitle */}
+          <p className="text-xs text-muted-foreground capitalize">
+            {role} dashboard
+          </p>
         </div>
       </div>
       <div className="space-y-4 flex-1 overflow-y-auto">
@@ -155,6 +227,7 @@ export function Sidebar({
           </div>
         ))}
       </div>
+      {/* ... keeping the rest of your original sidebar footer markup clean and identical ... */}
       <div className="mt-4 rounded-3xl border border-border bg-card p-4">
         <div className="flex items-center gap-3">
           <Avatar className="size-11">
@@ -231,11 +304,9 @@ export function Sidebar({
           className="bg-sidebar text-sidebar-foreground p-0"
         >
           <SheetHeader className="border-b border-border px-4 py-4">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <SheetTitle>Waylay</SheetTitle>
-                <SheetDescription>Navigation</SheetDescription>
-              </div>
+            <div>
+              <SheetTitle>Waylay</SheetTitle>
+              <SheetDescription>Navigation</SheetDescription>
             </div>
           </SheetHeader>
           <div className="space-y-4 px-4 py-4">{sidebarContent}</div>

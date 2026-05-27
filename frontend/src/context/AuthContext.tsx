@@ -1,18 +1,19 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-interface JwtPayload {
-  userId: number;
-  role: "candidate" | "company";
-  email: string;
-  iat: number;
-  exp: number;
-}
+// interface JwtPayload {
+//   userId: number;
+//   role: "candidate" | "company";
+//   email: string;
+//   iat: number;
+//   exp: number;
+// }
 
 type AuthContextType = {
   token: string | null;
   isAuthenticated: boolean;
   userId: number | null;
   role: "candidate" | "company" | null;
+  loading: boolean; // 👈 Expose loading state so your layout/routes can wait for initialization
   login: (token: string) => "candidate" | "company" | null;
   logout: () => void;
 };
@@ -76,18 +77,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [userId, setUserId] = useState<number | null>(null);
   const [role, setRole] = useState<"candidate" | "company" | null>(null);
+  const [loading, setLoading] = useState<boolean>(true); // 👈 Starts at true on refresh
 
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
     if (storedToken) {
-      setToken(storedToken);
       const payload = parseJwt(storedToken);
       if (payload) {
-        console.log("Parsed JWT payload:", payload);
-        setUserId(payload.id);
-        setRole(payload.role as "candidate" | "company");
+        // Check expiration to ensure token is still active (optional but recommended)
+        const isExpired = payload.exp * 1000 < Date.now();
+        if (!isExpired) {
+          setToken(storedToken);
+          setUserId(payload.id);
+          // Standardize casing to match what the client-side expectations expect
+          setRole(payload.role?.toLowerCase() as "candidate" | "company");
+        } else {
+          localStorage.removeItem("token");
+        }
       }
     }
+    setLoading(false); // 👈 Verification is done, components are safe to render now
   }, []);
 
   const login = (newToken: string) => {
@@ -122,6 +131,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: !!token,
         userId,
         role,
+        loading, // 👈 Added to context value
         login,
         logout,
       }}

@@ -1,13 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import { useNavigate } from "react-router"; // 👈 React Router v7 navigation engine
 import { useAuth } from "../../context/AuthContext";
 import { useUser } from "../../context/UserContext";
-import { Sidebar, type Section } from "../components/ui/Sidebar";
-import { CandidateProfile } from "../components/sections/candidate/CandidateProfile";
-import { CandidateSettings } from "../components/sections/candidate/CandidateSettings";
+import {
+  Sidebar,
+  type Section as SidebarSection,
+} from "../components/ui/Sidebar";
+
+// Section imports
 import { CandidateInbox } from "../components/sections/candidate/CandidateInbox";
 import { ChatsView } from "../components/sections/ChatsView";
+import CandidateAccount from "../components/sections/candidate/CandidateAccount";
+import { CandidateSettings } from "../components/sections/candidate/CandidateSettings";
+import CandidateJobProfile from "../components/sections/candidate/CandidateJobProfile";
 
 export type Company = {
   id: string;
@@ -53,27 +60,46 @@ export type Chat = {
   messages: ChatMessage[];
 };
 
+// Define local matching Section bounds
+type CandidateSection =
+  | "requests"
+  | "chats"
+  | "job-profile"
+  | "profile"
+  | "settings";
+
+const SECTION_TITLES: Record<CandidateSection, string> = {
+  requests: "Requests",
+  chats: "Messages",
+  "job-profile": "Job Profile & Matcher", // 👈 Added section title mapping
+  profile: "Candidate Account", // 👈 Updated to Candidate Account title
+  settings: "Settings",
+};
+
 export default function CandidateDashboard() {
   const auth = useAuth();
+  const navigate = useNavigate(); // 👈 Initialize routing hook
   const { inboxCount, unreadCount, loading, error } = useUser();
-  const [activeSection, setActiveSection] = useState<Section>("requests");
-
+  const [activeSection, setActiveSection] =
+    useState<CandidateSection>("requests");
   const [requests] = useState<Request[]>([]);
 
+  // Smoothly clean context and move back to landing path
+  const handleLogout = () => {
+    auth.logout();
+    navigate("/", { replace: true });
+  };
+
+  // Route authorization gate
   if (!auth.isAuthenticated) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4 text-center text-sm text-foreground">
-        Please sign in to see your candidate dashboard.
-      </div>
-    );
+    navigate("/", { replace: true });
+    return null;
   }
+
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/30 text-muted-foreground">
-        Loading dashboard...
-      </div>
-    );
+    return <div>Loading authentication session...</div>;
   }
+
   if (error) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4 text-center text-sm text-foreground">
@@ -90,47 +116,41 @@ export default function CandidateDashboard() {
     console.warn("decline request not wired yet", requestId);
   };
 
-  const sectionTitle: Record<Section, string> = {
-    requests: "Requests",
-    chats: "Messages",
-    profile: "Profile",
-    settings: "Settings",
-  };
-
-  const renderContent = () => {
-    switch (activeSection) {
-      case "profile":
-        return <CandidateProfile />;
-      case "settings":
-        return <CandidateSettings />;
-      case "requests":
-        return (
-          <CandidateInbox
-            requests={requests}
-            onAccept={handleAcceptRequest}
-            onDecline={handleDeclineRequest}
-          />
-        );
-      case "chats":
-        return <ChatsView />;
-      default:
-        return null;
-    }
-  };
-
   return (
     <Sidebar
-      activeSection={activeSection}
-      onSectionChange={setActiveSection}
+      role="candidate"
+      activeSection={activeSection as SidebarSection}
+      onSectionChange={(section) =>
+        setActiveSection(section as CandidateSection)
+      }
       requestCount={inboxCount}
       unreadCount={unreadCount}
-      onLogout={auth.logout}
+      onLogout={handleLogout} // 👈 Using corrected logout sequence handler
     >
       <div className="min-h-[calc(100vh-3rem)] bg-background p-4 md:p-6">
         <div className="mb-4 text-sm font-semibold text-foreground">
-          {sectionTitle[activeSection]}
+          {SECTION_TITLES[activeSection]}
         </div>
-        {renderContent()}
+
+        <main className="flex-1 overflow-auto">
+          {activeSection === "requests" && (
+            <CandidateInbox
+              requests={requests}
+              onAccept={handleAcceptRequest}
+              onDecline={handleDeclineRequest}
+            />
+          )}
+
+          {activeSection === "chats" && <ChatsView isCompany={false} />}
+
+          {/* 👈 New matching profile section rendered directly under messaging groups */}
+          {activeSection === "job-profile" && <CandidateJobProfile />}
+
+          {/* 👈 Updated to point to CandidateAccount instead of legacy profile */}
+          {activeSection === "profile" && <CandidateAccount />}
+
+          {activeSection === "settings" && <CandidateSettings />}
+        </main>
       </div>
     </Sidebar>
   );
