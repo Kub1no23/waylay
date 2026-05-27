@@ -26,7 +26,7 @@ public class MatchController : ControllerBase
     }
 
     [HttpGet("lookup/{profileId}")] // GET /api/match/lookup/:id
-    public async Task<IActionResult> MatchCandidatesToCompanyProfile(int profileId) //companyProfileId
+    public async Task<IActionResult> MatchCandidatesToCompanyProfile(int profileId)
     {
         var companyFlags = await _context.ProfileFlags
             .Where(pf => pf.ProfileId == profileId && pf.Flag!.Embedding != null)
@@ -47,13 +47,13 @@ public class MatchController : ControllerBase
                 Profile = pf.Profile,
                 FlagId = pf.FlagId,
                 FlagName = pf.Flag!.Name,
-                Embedding = pf.Flag!.Embedding
+                Embedding = pf.Flag!.Embedding // Předpokládám, že tohle je Pgvector.Vector (což implementuje nebo lze převést na float[])
             })
             .ToListAsync();
 
         var candidatesProfilesMatch = candidatesFlags
             .GroupBy(c => c.ProfileId)
-            .Select(g => //loop over each candidate profile /w flags
+            .Select(g =>
             {
                 var candidateProfile = g.First().Profile;
                 int matchedFlagsCount = 0;
@@ -66,7 +66,8 @@ public class MatchController : ControllerBase
 
                     foreach (var cndF in g)
                     {
-                        double distance = cmpF.Embedding!.CosineDistance(cndF.Embedding);
+                        // 🔥 ZMĚNA: Použijeme vlastní C# metodu místo nefunkční EF Core metody
+                        double distance = CalculateCosineDistance(cmpF.Embedding, cndF.Embedding);
                         double matchPercentage = (1 - distance) * 100;
 
                         if (matchPercentage > bestMatchPct)
@@ -108,6 +109,34 @@ public class MatchController : ControllerBase
             totalCompanyFlags = totalCompanyFlagsCount,
             candidatesProfileMatches = candidatesProfilesMatch
         });
+    }
+
+    // 🧮 POMOCNÁ METODA PRO VÝPOČET KOSINOVÉ VZDÁLENOSTI V C#
+    private static double CalculateCosineDistance(Pgvector.Vector vecA, Pgvector.Vector vecB)
+    {
+        // Pgvector.Vector se dá převést na pole floatů .ToArray()
+        float[] a = vecA.ToArray();
+        float[] b = vecB.ToArray();
+
+        if (a.Length != b.Length) return 1.0; // Pokud nesouhlasí dimenze, vrať max vzdálenost
+
+        double dotProduct = 0;
+        double normA = 0;
+        double normB = 0;
+
+        for (int i = 0; i < a.Length; i++)
+        {
+            dotProduct += a[i] * b[i];
+            normA += a[i] * a[i];
+            normB += b[i] * b[i];
+        }
+
+        if (normA == 0 || normB == 0) return 1.0; // Ochrana proti dělení nulou
+
+        double similarity = dotProduct / (Math.Sqrt(normA) * Math.Sqrt(normB));
+
+        // Kosinová vzdálenost je 1 - kosinová podobnost
+        return 1.0 - similarity;
     }
 
     [HttpPost] // POST /api/match
