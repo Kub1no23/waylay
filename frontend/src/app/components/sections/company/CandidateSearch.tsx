@@ -28,7 +28,7 @@ interface CandidateMatch {
   candidateProfileTitle?: string | null;
   candidateRemotePreference?: string | null;
   candidateYearsExperience?: number | null;
-  matchedFlagsCount: number;
+  matchedFlagsScore: number;
   totalCompanyFlags: number;
   matchPercentage: number;
   matchingDetails: MatchDetail[];
@@ -159,7 +159,7 @@ export default function CandidateSearch({
             matchPercentage:
               match.totalCompanyFlags > 0
                 ? Math.round(
-                    (match.matchedFlagsCount / match.totalCompanyFlags) * 100,
+                    (match.matchedFlagsScore / match.totalCompanyFlags) * 100,
                   )
                 : 0,
           })),

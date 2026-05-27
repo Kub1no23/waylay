@@ -193,7 +193,7 @@ export function Sidebar({
         onSectionChange(item.id);
         if (isMobile) setMobileOpen(false);
       }}
-      className={`w-full rounded-xl px-3 py-3 text-left transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ${
+      className={`w-full rounded-xl px-3 py-3 text-left transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground cursor-pointer ${
         activeSection === item.id
           ? "bg-sidebar-accent text-sidebar-accent-foreground"
           : "text-sidebar-foreground"
