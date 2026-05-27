@@ -169,7 +169,6 @@ public class ChatController : ControllerBase
                     chatId = c.StatusId,
                     companyId = c.Status!.CompanyId,
                     companyName = _context.Companies.Where(co => co.Id == c.Status.CompanyId).Select(co => co.Name).FirstOrDefault(),
-                    profileTitle = _context.Profiles.Where(p => p.OwnerId == c.Status.CompanyId).Select(p => p.Title).FirstOrDefault(),
 
                     latestMessage = c.Messages.OrderByDescending(m => m.CreatedAt).Select(m => new
                     {
@@ -198,7 +197,6 @@ public class ChatController : ControllerBase
                     chatId = c.StatusId,
                     candidateId = c.Status!.CandidateId,
                     candidateName = _context.Candidates.Where(cand => cand.Id == c.Status.CandidateId).Select(cand => cand.FirstName + " " + cand.LastName).FirstOrDefault(),
-                    profileTitle = _context.Profiles.Where(p => p.OwnerId == c.Status.CompanyId).Select(p => p.Title).FirstOrDefault(),
 
                     latestMessage = c.Messages.OrderByDescending(m => m.CreatedAt).Select(m => new
                     {

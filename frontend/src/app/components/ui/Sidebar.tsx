@@ -11,6 +11,7 @@ import {
   SheetDescription,
 } from "./Sheet";
 import { useIsMobile } from "../../../hooks/useMobile";
+import { useUser } from "../../../context/UserContext";
 import {
   InboxIcon,
   MessageSquareIcon,
@@ -18,9 +19,17 @@ import {
   UserIcon,
   LogOutIcon,
 } from "./Icons";
-import { useUser } from "../../../context/UserContext";
+import { SearchIcon, BriefcaseIcon } from "lucide-react";
 
-export type Section = "requests" | "chats" | "profile" | "settings";
+export type Section =
+  | "requests"
+  | "chats"
+  | "job-profile"
+  | "profile"
+  | "settings"
+  | "search"
+  | "inbox"
+  | "job-offers";
 
 export interface SidebarUser {
   firstName: string;
@@ -30,6 +39,7 @@ export interface SidebarUser {
 }
 
 interface SidebarProps {
+  role?: "candidate" | "company";
   activeSection: Section;
   onSectionChange: (section: Section) => void;
   requestCount: number;
@@ -46,49 +56,19 @@ type NavItem = {
   badgeKey?: "requestCount" | "unreadCount";
 };
 
-const groups: Array<{ title: string; items: NavItem[] }> = [
-  {
-    title: "Messages",
-    items: [
-      {
-        id: "requests",
-        label: "Requests",
-        icon: <InboxIcon className="size-4" />,
-        badgeKey: "requestCount",
-      },
-      {
-        id: "chats",
-        label: "Chats",
-        icon: <MessageSquareIcon className="size-4" />,
-        badgeKey: "unreadCount",
-      },
-    ],
-  },
-  {
-    title: "Account",
-    items: [
-      {
-        id: "profile",
-        label: "Profile",
-        icon: <UserIcon className="size-4" />,
-      },
-      {
-        id: "settings",
-        label: "Settings",
-        icon: <SettingsIcon className="size-4" />,
-      },
-    ],
-  },
-];
-
 const sectionTitle: Record<Section, string> = {
   requests: "Requests",
   chats: "Messages",
+  "job-profile": "Job Profile",
   profile: "Profile",
   settings: "Settings",
+  search: "Candidate Search",
+  inbox: "Inbox",
+  "job-offers": "Job Offers",
 };
 
 export function Sidebar({
+  role = "candidate",
   activeSection,
   onSectionChange,
   requestCount,
@@ -100,7 +80,105 @@ export function Sidebar({
   const [mobileOpen, setMobileOpen] = useState(false);
   const isMobile = useIsMobile();
   const { userProfile } = useUser();
+
   const profile = userProfile ?? user;
+
+  // Dynamically compute layout sets depending on the dashboard scope
+  const groups: Array<{ title: string; items: NavItem[] }> =
+    role === "company"
+      ? [
+          {
+            title: "Recruitment",
+            items: [
+              {
+                id: "search",
+                label: "Candidate Search",
+                icon: <SearchIcon className="size-4" />,
+              },
+              {
+                id: "job-offers",
+                label: "Job Offers",
+                icon: <BriefcaseIcon className="size-4" />,
+              },
+            ],
+          },
+          {
+            title: "Messages",
+            items: [
+              {
+                id: "inbox",
+                label: "Inbox",
+                icon: <InboxIcon className="size-4" />,
+                badgeKey: "requestCount",
+              },
+              {
+                id: "chats",
+                label: "Chats",
+                icon: <MessageSquareIcon className="size-4" />,
+                badgeKey: "unreadCount",
+              },
+            ],
+          },
+          {
+            title: "Account",
+            items: [
+              {
+                id: "profile",
+                label: "Profile",
+                icon: <UserIcon className="size-4" />,
+              },
+              {
+                id: "settings",
+                label: "Settings",
+                icon: <SettingsIcon className="size-4" />,
+              },
+            ],
+          },
+        ]
+      : [
+          {
+            title: "Messages",
+            items: [
+              {
+                id: "requests",
+                label: "Requests",
+                icon: <InboxIcon className="size-4" />,
+                badgeKey: "requestCount",
+              },
+              {
+                id: "chats",
+                label: "Chats",
+                icon: <MessageSquareIcon className="size-4" />,
+                badgeKey: "unreadCount",
+              },
+            ],
+          },
+          {
+            title: "Matching & Growth",
+            items: [
+              {
+                id: "job-profile",
+                label: "Job Profile",
+                icon: <BriefcaseIcon className="size-4" />, // Reused Lucide icon here nicely
+              },
+            ],
+          },
+          {
+            title: "Account",
+            items: [
+              {
+                id: "profile",
+                label: "Profile",
+                icon: <UserIcon className="size-4" />,
+              },
+              {
+                id: "settings",
+                label: "Settings",
+                icon: <SettingsIcon className="size-4" />,
+              },
+            ],
+          },
+        ];
 
   const badgeValue = (key: string) => {
     if (key === "requestCount") return requestCount;
@@ -124,7 +202,7 @@ export function Sidebar({
       <div className="flex items-center gap-3">
         {item.icon}
         <span className="truncate text-sm font-medium">{item.label}</span>
-        {item.badgeKey ? (
+        {item.badgeKey && badgeValue(item.badgeKey) > 0 ? (
           <span className="ml-auto inline-flex items-center rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-primary-foreground">
             {badgeValue(item.badgeKey)}
           </span>
@@ -141,7 +219,9 @@ export function Sidebar({
         </div>
         <div>
           <p className="text-sm font-semibold text-foreground">Waylay</p>
-          <p className="text-xs text-muted-foreground">Candidate dashboard</p>
+          <p className="text-xs text-muted-foreground capitalize">
+            {role} dashboard
+          </p>
         </div>
       </div>
       <div className="space-y-4 flex-1 overflow-y-auto">
@@ -158,6 +238,7 @@ export function Sidebar({
           </div>
         ))}
       </div>
+
       <div className="mt-4 rounded-3xl border border-border bg-card p-4">
         <div className="flex items-center gap-3">
           <Avatar className="size-11">
@@ -238,14 +319,14 @@ export function Sidebar({
           className="bg-sidebar text-sidebar-foreground p-0"
         >
           <SheetHeader className="border-b border-border px-4 py-4">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <SheetTitle>Waylay</SheetTitle>
-                <SheetDescription>Navigation</SheetDescription>
-              </div>
+            <div>
+              <SheetTitle>Waylay</SheetTitle>
+              <SheetDescription>Navigation</SheetDescription>
             </div>
           </SheetHeader>
-          <div className="space-y-4 px-4 py-4">{sidebarContent}</div>
+          <div className="h-[calc(100vh-5rem)] overflow-y-auto">
+            {sidebarContent}
+          </div>
         </SheetContent>
       </Sheet>
     </div>

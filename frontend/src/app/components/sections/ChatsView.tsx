@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Button } from "../ui/Button";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/Avatar";
 import { ScrollArea } from "../ui/ScrollArea";
-<<<<<<< HEAD
 import {
   Empty,
   EmptyHeader,
@@ -12,10 +11,7 @@ import {
   EmptyTitle,
   EmptyDescription,
 } from "../ui/Empty";
-=======
-import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "../ui/Empty";
 import { Eye as EyeIcon } from "lucide-react";
->>>>>>> 562cb7f9f29f702a0a6fae02338f933dfcbe7e24
 import type { Company } from "../../pages/CandidateDashboard";
 import { CompanyProfileView } from "./candidate/CompanyProfileView";
 import { useAuth } from "../../../context/AuthContext";
@@ -206,9 +202,17 @@ export function ChatsView({ isCompany = false }: ChatsViewProps) {
   const auth = useAuth();
   const { connection } = useUser();
   const [chats, setChats] = useState<ChatPreview[]>([]);
-  const [selectedChat, setSelectedChat] = useState<BackendChatHistory | null>(null);
-  const [selectedPreview, setSelectedPreview] = useState<ChatPreview | null>(null);
-  const [typingState, setTypingState] = useState<{ chatId: number; sender: number; expiresAt: number } | null>(null);
+  const [selectedChat, setSelectedChat] = useState<BackendChatHistory | null>(
+    null,
+  );
+  const [selectedPreview, setSelectedPreview] = useState<ChatPreview | null>(
+    null,
+  );
+  const [typingState, setTypingState] = useState<{
+    chatId: number;
+    sender: number;
+    expiresAt: number;
+  } | null>(null);
   const [viewingCompany, setViewingCompany] = useState<{
     company: Company;
     role: string;
@@ -228,12 +232,18 @@ export function ChatsView({ isCompany = false }: ChatsViewProps) {
   useEffect(() => {
     if (!connection || !auth.userId) return;
 
-    const handleTypingSignal = (chatId: number, senderId: number, isTyping: boolean) => {
+    const handleTypingSignal = (
+      chatId: number,
+      senderId: number,
+      isTyping: boolean,
+    ) => {
       if (senderId === auth.userId) return;
 
       if (!isTyping) {
         setTypingState((prev) =>
-          prev && prev.chatId === chatId && prev.sender === senderId ? null : prev,
+          prev && prev.chatId === chatId && prev.sender === senderId
+            ? null
+            : prev,
         );
         return;
       }
@@ -286,12 +296,12 @@ export function ChatsView({ isCompany = false }: ChatsViewProps) {
         prev.map((chat) =>
           chat.chatId === chatId && chat.latestMessage?.sender === auth.userId
             ? {
-              ...chat,
-              latestMessage: {
-                ...chat.latestMessage,
-                isRead: true,
-              },
-            }
+                ...chat,
+                latestMessage: {
+                  ...chat.latestMessage,
+                  isRead: true,
+                },
+              }
             : chat,
         ),
       );
@@ -311,7 +321,9 @@ export function ChatsView({ isCompany = false }: ChatsViewProps) {
 
     const timeout = window.setTimeout(() => {
       setTypingState((prev) =>
-        prev && prev.chatId === typingState.chatId && prev.sender === typingState.sender
+        prev &&
+        prev.chatId === typingState.chatId &&
+        prev.sender === typingState.sender
           ? null
           : prev,
       );
@@ -336,7 +348,9 @@ export function ChatsView({ isCompany = false }: ChatsViewProps) {
             latestMessage: item.latestMessage,
             createdAt: item.createdAt,
             updatedAt: item.updatedAt,
-            company: item.companyId ? { id: item.companyId, name: item.companyName } as any : undefined,
+            company: item.companyId
+              ? ({ id: item.companyId, name: item.companyName } as any)
+              : undefined,
             otherUserId: item.companyId,
             displayName: item.companyName,
             role: "company",
@@ -368,7 +382,9 @@ export function ChatsView({ isCompany = false }: ChatsViewProps) {
     }
   };
 
-  const loadChatHistory = async (chatId: number): Promise<BackendChatHistory | null> => {
+  const loadChatHistory = async (
+    chatId: number,
+  ): Promise<BackendChatHistory | null> => {
     setError(null);
 
     try {
@@ -463,18 +479,6 @@ export function ChatsView({ isCompany = false }: ChatsViewProps) {
       const sentMessage = response.data?.data ?? response.data;
 
       if (sentMessage) {
-<<<<<<< HEAD
-        setSelectedChat((prev) =>
-          prev
-            ? {
-                ...prev,
-                messages: [...prev.messages, sentMessage],
-                latestMessage: sentMessage,
-                updatedAt: sentMessage.createdAt,
-              }
-            : prev,
-        );
-=======
         setSelectedChat((prev) => {
           if (!prev) return prev;
 
@@ -494,24 +498,15 @@ export function ChatsView({ isCompany = false }: ChatsViewProps) {
             updatedAt: sentMessage.createdAt,
           } as any;
         });
->>>>>>> 562cb7f9f29f702a0a6fae02338f933dfcbe7e24
         setChats((prev) =>
           prev.map((c) =>
             c.chatId === (selectedPreview?.chatId ?? selectedChat?.chatId)
               ? {
-<<<<<<< HEAD
-                  ...chat,
+                  ...c,
                   latestMessage: sentMessage,
                   updatedAt: sentMessage.createdAt,
                 }
-              : chat,
-=======
-                ...c,
-                latestMessage: sentMessage,
-                updatedAt: sentMessage.createdAt,
-              }
               : c,
->>>>>>> 562cb7f9f29f702a0a6fae02338f933dfcbe7e24
           ),
         );
         setError(null);
@@ -544,9 +539,15 @@ export function ChatsView({ isCompany = false }: ChatsViewProps) {
         preview={selectedPreview}
         typingState={typingState}
         isCompany={isCompany}
-        onBack={() => { setSelectedChat(null); setSelectedPreview(null); }}
+        onBack={() => {
+          setSelectedChat(null);
+          setSelectedPreview(null);
+        }}
         onViewCompany={() =>
-          handleViewCompany(selectedPreview?.company, selectedPreview?.role ?? "")
+          handleViewCompany(
+            selectedPreview?.company,
+            selectedPreview?.role ?? "",
+          )
         }
         onSendMessage={handleSendMessage}
       />
@@ -605,14 +606,9 @@ export function ChatsView({ isCompany = false }: ChatsViewProps) {
           const previewDate = chat.latestMessage?.createdAt ?? chat.updatedAt;
           const isTypingPreview = typingState?.chatId === chat.chatId;
 
-<<<<<<< HEAD
-          const senderPrefix =
-            chat.latestMessage?.sender === auth.userId
-=======
           const senderPrefix = isTypingPreview
             ? "User"
             : chat.latestMessage?.sender === auth.userId
->>>>>>> 562cb7f9f29f702a0a6fae02338f933dfcbe7e24
               ? "You"
               : isCompany
                 ? chat.candidateName?.split(" ")[0] || "Candidate"
@@ -655,23 +651,16 @@ export function ChatsView({ isCompany = false }: ChatsViewProps) {
                   </div>
 
                   <p
-<<<<<<< HEAD
                     className={`mt-1.5 text-sm truncate ${
-                      unreadCount > 0
+                      unreadCount > 0 || isTypingPreview
                         ? "text-foreground font-medium"
                         : "text-muted-foreground"
                     }`}
                   >
                     {senderPrefix}:{" "}
-                    {chat.latestMessage?.content ?? "No messages yet"}
-=======
-                    className={`mt-1.5 text-sm truncate ${unreadCount > 0 || isTypingPreview
-                      ? "text-foreground font-medium"
-                      : "text-muted-foreground"
-                      }`}
-                  >
-                    {senderPrefix}: {isTypingPreview ? "User is typing..." : chat.latestMessage?.content ?? "No messages yet"}
->>>>>>> 562cb7f9f29f702a0a6fae02338f933dfcbe7e24
+                    {isTypingPreview
+                      ? "User is typing..."
+                      : (chat.latestMessage?.content ?? "No messages yet")}
                   </p>
                 </div>
               </div>
@@ -709,7 +698,11 @@ function ChatThread({
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // normalize messages from backend-shaped or normalized chat
-  const normalizedMessages: Message[] = ((chat as any).messages ?? (chat as any).Messages ?? []).map((m: any) => ({
+  const normalizedMessages: Message[] = (
+    (chat as any).messages ??
+    (chat as any).Messages ??
+    []
+  ).map((m: any) => ({
     id: m.id ?? m.Id,
     sender: m.sender ?? m.Sender,
     content: m.content ?? m.Content,
@@ -717,17 +710,21 @@ function ChatThread({
     isRead: m.isRead ?? m.IsRead ?? false,
   }));
 
-  const isTyping = typingState?.chatId === chat.chatId && typingState.sender !== currentUserId;
+  const isTyping =
+    typingState?.chatId === chat.chatId && typingState.sender !== currentUserId;
   const typingSeconds = isTyping
     ? Math.max(1, Math.ceil((typingState.expiresAt - Date.now()) / 1000))
     : 0;
 
-  const lastReadOutgoingMessageId = normalizedMessages.reduce<number | null>((acc, msg) => {
-    if (msg.sender === currentUserId && msg.isRead) {
-      return msg.id;
-    }
-    return acc;
-  }, null);
+  const lastReadOutgoingMessageId = normalizedMessages.reduce<number | null>(
+    (acc, msg) => {
+      if (msg.sender === currentUserId && msg.isRead) {
+        return msg.id;
+      }
+      return acc;
+    },
+    null,
+  );
 
   const msgCount = normalizedMessages.length;
 
@@ -752,17 +749,11 @@ function ChatThread({
   };
 
   const name = isCompany
-<<<<<<< HEAD
-    ? (chat.candidateName ?? chat.displayName ?? `Chat ${chat.chatId}`)
-    : (chat.company?.name ?? chat.displayName ?? `Chat ${chat.chatId}`);
+    ? (preview?.candidateName ?? preview?.displayName ?? `Chat ${chat.chatId}`)
+    : (preview?.company?.name ?? preview?.displayName ?? `Chat ${chat.chatId}`);
   const avatar = isCompany
-    ? (chat.candidateAvatar ?? chat.avatarUrl)
-    : (chat.company?.logo ?? chat.avatarUrl);
-=======
-    ? preview?.candidateName ?? preview?.displayName ?? `Chat ${chat.chatId}`
-    : preview?.company?.name ?? preview?.displayName ?? `Chat ${chat.chatId}`;
-  const avatar = isCompany ? preview?.candidateAvatar ?? preview?.avatarUrl : preview?.company?.logo ?? preview?.avatarUrl;
->>>>>>> 562cb7f9f29f702a0a6fae02338f933dfcbe7e24
+    ? (preview?.candidateAvatar ?? preview?.avatarUrl)
+    : (preview?.company?.logo ?? preview?.avatarUrl);
   const initial = name ? name[0] : "?";
   const subtitle = preview?.role
     ? isCompany
@@ -809,55 +800,33 @@ function ChatThread({
       {/* Messages */}
       <div className="flex-1 overflow-auto p-4" ref={scrollRef}>
         <div className="mx-auto max-w-2xl space-y-3">
-<<<<<<< HEAD
-          {chat.messages.map((msg: Message) => {
+          {normalizedMessages.map((msg: Message) => {
             const isIncoming = currentUserId
               ? msg.sender !== currentUserId
               : true;
-=======
-          {normalizedMessages.map((msg: Message) => {
-            const isIncoming = currentUserId ? msg.sender !== currentUserId : true;
->>>>>>> 562cb7f9f29f702a0a6fae02338f933dfcbe7e24
 
             return (
               <div
                 key={msg.id}
                 className={`flex ${isIncoming ? "justify-start" : "justify-end"}`}
               >
-<<<<<<< HEAD
-                <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${
-                    isIncoming
-                      ? "bg-card border border-border text-foreground rounded-bl-md"
-                      : "bg-primary text-primary-foreground rounded-br-md"
-                  }`}
-                >
-                  <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                    {msg.content}
-                  </p>
-                  <p
-                    className={`mt-1.5 text-[10px] ${
-                      isIncoming
-                        ? "text-muted-foreground"
-                        : "text-primary-foreground/70"
-                    }`}
-=======
                 <div className="flex flex-col items-end gap-1">
                   <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${isIncoming
-                      ? "bg-card border border-border text-foreground rounded-bl-md"
-                      : "bg-primary text-primary-foreground rounded-br-md"
-                      }`}
->>>>>>> 562cb7f9f29f702a0a6fae02338f933dfcbe7e24
+                    className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${
+                      isIncoming
+                        ? "bg-card border border-border text-foreground rounded-bl-md"
+                        : "bg-primary text-primary-foreground rounded-br-md"
+                    }`}
                   >
                     <p className="text-sm whitespace-pre-wrap leading-relaxed">
                       {msg.content}
                     </p>
                     <p
-                      className={`mt-1.5 text-[10px] ${isIncoming
-                        ? "text-muted-foreground"
-                        : "text-primary-foreground/70"
-                        }`}
+                      className={`mt-1.5 text-[10px] ${
+                        isIncoming
+                          ? "text-muted-foreground"
+                          : "text-primary-foreground/70"
+                      }`}
                     >
                       {formatMessageTime(new Date(msg.createdAt))}
                     </p>

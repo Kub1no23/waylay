@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Avatar,
   AvatarFallback,
@@ -9,6 +9,39 @@ import { ScrollArea } from "../../../components/ui/ScrollArea";
 import { MapPin, Briefcase, Star, Heart, ChevronDown } from "lucide-react";
 
 import CandidateProfileView from "./CandidateProfileView";
+import { API } from "../../../../api/auth";
+
+interface MatchDetail {
+  companyFlag: string;
+  companyFlagId: number;
+  bestMatchWith: string;
+  score: number;
+}
+
+interface CandidateMatch {
+  candidateProfileId: number;
+  candidateId: number;
+  candidateName?: string | null;
+  candidateHeadline?: string | null;
+  candidateLocation?: string | null;
+  candidateSummary?: string | null;
+  candidateProfileTitle?: string | null;
+  candidateRemotePreference?: string | null;
+  candidateYearsExperience?: number | null;
+  matchedFlagsCount: number;
+  totalCompanyFlags: number;
+  matchPercentage: number;
+  matchingDetails: MatchDetail[];
+}
+
+interface CompanyProfileSummary {
+  id: number;
+  title?: string | null;
+  summary?: string | null;
+  location?: string | null;
+  remotePreference?: string | null;
+  yearsExperience?: number | null;
+}
 
 interface Candidate {
   id: string;
@@ -42,71 +75,10 @@ interface Candidate {
   linkedinUrl: string;
 }
 
-interface JobOffer {
-  id: string;
-  title: string;
-  seniority: string;
-  remote: string;
-  skills: string[];
-  candidates: Candidate[];
+interface CandidateSearchProps {
+  onInterested: (candidateId: string) => void;
+  interestedIds?: string[];
 }
-
-const mockJobOffers: JobOffer[] = [
-  {
-    id: "rp1",
-    title: "Senior Frontend Engineer",
-    seniority: "Senior",
-    remote: "Hybrid",
-    skills: ["React", "TypeScript", "GraphQL", "Tailwind CSS"],
-    candidates: [
-      {
-        id: "c1",
-        name: "Alex Johnson",
-        role: "Senior Frontend Engineer",
-        avatarUrl: "",
-        headline: "Building scalable web apps with React & TypeScript",
-        location: "San Francisco, CA",
-        experience: "5+ years",
-        matchScore: 94,
-        remotePreference: "Hybrid",
-        availability: "Open to offers",
-        summary:
-          "Passionate software engineer with 5+ years building modern web applications.",
-        skills: ["React", "TypeScript", "Node.js", "GraphQL", "Tailwind CSS"],
-        workExperience: [
-          {
-            title: "Senior Frontend Engineer",
-            company: "Acme Corp",
-            period: "2021 – Present",
-            description:
-              "Led frontend architecture for a SaaS platform serving 50k+ users.",
-          },
-        ],
-        education: [
-          {
-            degree: "B.Sc. Computer Science",
-            school: "UC Berkeley",
-            period: "2015 – 2019",
-          },
-        ],
-        desiredRoles: ["Senior Frontend Engineer", "Tech Lead"],
-        desiredIndustries: ["SaaS", "FinTech"],
-        salaryExpectation: "$160k – $200k",
-        githubUrl: "https://github.com/alexjohnson",
-        portfolioUrl: "https://alexjohnson.dev",
-        linkedinUrl: "https://linkedin.com/in/alexjohnson",
-      },
-    ],
-  },
-  {
-    id: "rp2",
-    title: "Full Stack Developer",
-    seniority: "Mid-level",
-    remote: "Remote only",
-    skills: ["Node.js", "Python", "React", "PostgreSQL"],
-    candidates: [],
-  },
-];
 
 function MatchBadge({ score }: { score: number }) {
   const color =
@@ -126,28 +98,152 @@ function MatchBadge({ score }: { score: number }) {
   );
 }
 
-interface CandidateSearchProps {
-  onInterested: (candidateId: string) => void;
-  interestedIds?: string[];
-}
-
 export default function CandidateSearch({
   onInterested,
   interestedIds = [],
 }: CandidateSearchProps) {
-  const [selectedOfferId, setSelectedOfferId] = useState<string>(
-    mockJobOffers[0].id,
+  const [profiles, setProfiles] = useState<CompanyProfileSummary[]>([]);
+  const [selectedProfileId, setSelectedProfileId] = useState<number | null>(
+    null,
   );
+  const [matches, setMatches] = useState<CandidateMatch[]>([]);
   const [viewing, setViewing] = useState<Candidate | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
+  const [loadingProfiles, setLoadingProfiles] = useState(false);
+  const [loadingMatches, setLoadingMatches] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const selectedOffer = mockJobOffers.find(
-    (offer) => offer.id === selectedOfferId,
+  useEffect(() => {
+    const loadProfiles = async () => {
+      setLoadingProfiles(true);
+      setError(null);
+
+      try {
+        const response = await API.get<CompanyProfileSummary[]>("/profile/my");
+        const companyProfiles = response.data ?? [];
+        setProfiles(companyProfiles);
+        if (companyProfiles.length > 0) {
+          setSelectedProfileId(companyProfiles[0].id);
+        }
+      } catch (err) {
+        console.error("Failed to load company profiles", err);
+        setError("Unable to load your recruiting profiles. Please refresh.");
+      } finally {
+        setLoadingProfiles(false);
+      }
+    };
+
+    void loadProfiles();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedProfileId) {
+      setMatches([]);
+      return;
+    }
+
+    const loadMatches = async () => {
+      setLoadingMatches(true);
+      setError(null);
+
+      try {
+        const response = await API.get<{
+          searchedProfileId: number;
+          totalCompanyFlags: number;
+          candidatesProfileMatches: CandidateMatch[];
+        }>(`/match/lookup/${selectedProfileId}`);
+
+        setMatches(
+          (response.data.candidatesProfileMatches ?? []).map((match) => ({
+            ...match,
+            matchPercentage:
+              match.totalCompanyFlags > 0
+                ? Math.round(
+                    (match.matchedFlagsCount / match.totalCompanyFlags) * 100,
+                  )
+                : 0,
+          })),
+        );
+      } catch (err) {
+        console.error("Failed to load candidate matches", err);
+        setError(
+          "Unable to fetch candidate matches. Please check your company profile flags.",
+        );
+        setMatches([]);
+      } finally {
+        setLoadingMatches(false);
+      }
+    };
+
+    void loadMatches();
+  }, [selectedProfileId]);
+
+  const selectedProfile = useMemo(
+    () => profiles.find((profile) => profile.id === selectedProfileId) ?? null,
+    [profiles, selectedProfileId],
   );
 
-  const candidates = [...(selectedOffer?.candidates ?? [])].sort(
-    (a, b) => (b.matchScore ?? 0) - (a.matchScore ?? 0),
-  );
+  const candidateCards: Candidate[] = matches
+    .map((match) => ({
+      id: match.candidateProfileId.toString(),
+      name: match.candidateName || match.candidateProfileTitle || "Candidate",
+      role:
+        match.candidateProfileTitle || match.candidateHeadline || "Candidate",
+      avatarUrl: "",
+      headline: match.candidateHeadline || match.candidateSummary || "",
+      location: match.candidateLocation || "Remote",
+      experience: match.candidateYearsExperience
+        ? `${match.candidateYearsExperience}+ years`
+        : "N/A",
+      matchScore: match.matchPercentage,
+      remotePreference: match.candidateRemotePreference || "Unknown",
+      availability: "Open to offers",
+      summary: match.candidateSummary ?? "",
+      skills: match.matchingDetails
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5)
+        .map((detail) => detail.companyFlag),
+      workExperience: [],
+      education: [],
+      desiredRoles: match.candidateProfileTitle
+        ? [match.candidateProfileTitle]
+        : [],
+      desiredIndustries: [],
+      salaryExpectation: "",
+      githubUrl: "",
+      portfolioUrl: "",
+      linkedinUrl: "",
+    }))
+    .sort((a, b) => b.matchScore - a.matchScore);
+
+  if (loadingProfiles) {
+    return (
+      <div className="flex min-h-96 items-center justify-center rounded-xl border border-border bg-card text-sm text-muted-foreground">
+        Loading recruiting profiles...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-xl border border-border bg-card p-6 text-sm text-foreground">
+        <p className="text-red-600">{error}</p>
+      </div>
+    );
+  }
+
+  if (!profiles.length) {
+    return (
+      <div className="rounded-xl border border-border bg-card p-6 text-sm text-foreground">
+        <p className="font-semibold text-foreground">
+          No recruiting profiles found.
+        </p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Create a company recruiting profile to search candidates by job offer.
+        </p>
+      </div>
+    );
+  }
 
   if (viewing) {
     return (
@@ -178,9 +274,13 @@ export default function CandidateSearch({
           >
             <span className="flex items-center gap-2">
               <Briefcase className="size-4 text-muted-foreground shrink-0" />
-              {selectedOffer?.title}
+              {selectedProfile?.title || "Recruiting profile"}
               <span className="text-xs text-muted-foreground font-normal">
-                · {selectedOffer?.seniority} · {selectedOffer?.remote}
+                {selectedProfile?.location || ""}
+                {selectedProfile?.location && selectedProfile?.remotePreference
+                  ? " · "
+                  : ""}
+                {selectedProfile?.remotePreference || ""}
               </span>
             </span>
 
@@ -193,23 +293,27 @@ export default function CandidateSearch({
 
           {dropdownOpen && (
             <div className="absolute z-10 mt-1 w-full rounded-lg border border-border bg-background shadow-md">
-              {mockJobOffers.map((offer: JobOffer) => (
+              {profiles.map((profile) => (
                 <button
-                  key={offer.id}
+                  key={profile.id}
                   onClick={() => {
-                    setSelectedOfferId(offer.id);
+                    setSelectedProfileId(profile.id);
                     setDropdownOpen(false);
                   }}
                   className={`w-full flex items-start gap-3 px-3 py-2.5 text-left text-sm hover:bg-muted/50 transition-colors first:rounded-t-lg last:rounded-b-lg ${
-                    offer.id === selectedOfferId ? "bg-muted/40" : ""
+                    profile.id === selectedProfileId ? "bg-muted/40" : ""
                   }`}
                 >
                   <div>
-                    <p className="font-medium text-foreground">{offer.title}</p>
+                    <p className="font-medium text-foreground">
+                      {profile.title || "Untitled profile"}
+                    </p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {offer.seniority} · {offer.remote} ·{" "}
-                      {offer.candidates.length} match
-                      {offer.candidates.length !== 1 ? "es" : ""}
+                      {profile.location || ""}
+                      {profile.location && profile.remotePreference
+                        ? " · "
+                        : ""}
+                      {profile.remotePreference || ""}
                     </p>
                   </div>
                 </button>
@@ -218,26 +322,40 @@ export default function CandidateSearch({
           )}
         </div>
 
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {selectedOffer?.skills.map((skill: string) => (
-            <span
-              key={skill}
-              className="rounded-md border border-border bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground"
-            >
-              {skill}
-            </span>
-          ))}
-        </div>
+        {selectedProfile?.summary && (
+          <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
+            {selectedProfile.summary}
+          </p>
+        )}
       </div>
 
       <ScrollArea className="flex-1">
         <div className="grid gap-3 p-4 lg:p-6">
-          <p className="text-xs text-muted-foreground">
-            {candidates.length} candidate
-            {candidates.length !== 1 ? "s" : ""} matched
-          </p>
+          <div className="flex flex-col gap-2">
+            <p className="text-xs text-muted-foreground">
+              {loadingMatches
+                ? "Computing matches..."
+                : `${candidateCards.length} candidate${candidateCards.length !== 1 ? "s" : ""} matched`}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {selectedProfile?.summary ||
+                "Search candidates by your company profile flags."}
+            </p>
+          </div>
 
-          {candidates.map((candidate: Candidate) => (
+          {loadingMatches && (
+            <div className="rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">
+              Calculating match scores based on shared flags...
+            </div>
+          )}
+
+          {!loadingMatches && candidateCards.length === 0 && (
+            <div className="rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">
+              No matching candidates found for this profile.
+            </div>
+          )}
+
+          {candidateCards.map((candidate) => (
             <div
               key={candidate.id}
               className="rounded-xl border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md"
