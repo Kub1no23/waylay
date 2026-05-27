@@ -32,8 +32,12 @@ steps:
         '--platform',
         'managed',
         '--set-env-vars',
-        'PROJECT_NUMBER=${PROJECT_NUMBER},PROJECT_ID=${_PROJECT_ID}',
-        '--allow-unauthenticated'
+        'PROJECT_NUMBER=${PROJECT_NUMBER},PROJECT_ID=${_PROJECT_ID},GCP__Location=europe-west3,GCP__TextModelName=text-embedding-005,Jwt__Issuer=waylay-backend,Jwt__Audience=waylay-frontend',
+        '--allow-unauthenticated',
+        '--set-secrets',
+        'Jwt__Key=jwt_key:latest,ConnectionStrings__GcpPostgresConnection=db_connection_string:latest',
+        '--add-cloudsql-instances',
+        'coba-studteam-1-waylay:europe-west3:waylay-db'
       ]
 
 images:
