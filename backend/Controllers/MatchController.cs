@@ -210,6 +210,7 @@ public class MatchController : ControllerBase
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             });
+            await _context.SaveChangesAsync();
 
             var matchNotification = new
             {
