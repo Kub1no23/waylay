@@ -42,7 +42,7 @@ public class UserController : ControllerBase
 
     [Authorize(Roles = "candidate")]
     [HttpPut("candidate")] // PUT /api/user/candidate
-    public async Task<IActionResult> UpdateCandidate([FromBody] CandidateAccReq req)
+    public async Task<IActionResult> UpdateCandidate([FromBody] CandidateAccChangeReq req)
     {
         var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (userIdStr == null) return Unauthorized();
@@ -57,7 +57,7 @@ public class UserController : ControllerBase
         if (candidate == null) return NotFound("Candidate not found");
 
         // data update : defaults to existing values if new ones are not provided
-        candidate.Email = req.Email;
+        candidate.Email = req.Email ?? candidate.Email;
         candidate.FirstName = req.FirstName ?? candidate.FirstName;
         candidate.LastName = req.LastName ?? candidate.LastName;
         candidate.Location = req.Location ?? candidate.Location;
@@ -94,7 +94,7 @@ public class UserController : ControllerBase
 
     [Authorize(Roles = "company")]
     [HttpPut("company")] // PUT /api/user/company
-    public async Task<IActionResult> UpdateCompany([FromBody] CompanyAccReq req)
+    public async Task<IActionResult> UpdateCompany([FromBody] CompanyAccChangeReq req)
     {
         var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (userIdStr == null) return Unauthorized();
@@ -109,7 +109,7 @@ public class UserController : ControllerBase
         var company = await _context.Companies.FindAsync(userId);
         if (company == null) return NotFound("Company not found");
 
-        company.Email = req.Email;
+        company.Email = req.Email ?? company.Email;
         company.Name = req.Name ?? company.Name;
         company.Headquarters = req.Headquarters ?? company.Headquarters;
         company.Address = req.Address ?? company.Address;

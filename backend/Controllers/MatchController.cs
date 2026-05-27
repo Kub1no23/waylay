@@ -47,7 +47,7 @@ public class MatchController : ControllerBase
                 Profile = pf.Profile,
                 FlagId = pf.FlagId,
                 FlagName = pf.Flag!.Name,
-                Embedding = pf.Flag!.Embedding // Předpokládám, že tohle je Pgvector.Vector (což implementuje nebo lze převést na float[])
+                Embedding = pf.Flag!.Embedding
             })
             .ToListAsync();
 
@@ -94,6 +94,7 @@ public class MatchController : ControllerBase
                 return new
                 {
                     CandidateProfileId = g.Key,
+                    CandidateId = candidateProfile!.OwnerId,
                     MatchedFlagsScore = matchedFlagsCount,
                     TotalCompanyFlags = totalCompanyFlagsCount,
                     MatchingDetails = details
@@ -111,14 +112,12 @@ public class MatchController : ControllerBase
         });
     }
 
-    // 🧮 POMOCNÁ METODA PRO VÝPOČET KOSINOVÉ VZDÁLENOSTI V C#
     private static double CalculateCosineDistance(Pgvector.Vector vecA, Pgvector.Vector vecB)
     {
-        // Pgvector.Vector se dá převést na pole floatů .ToArray()
         float[] a = vecA.ToArray();
         float[] b = vecB.ToArray();
 
-        if (a.Length != b.Length) return 1.0; // Pokud nesouhlasí dimenze, vrať max vzdálenost
+        if (a.Length != b.Length) return 1.0;
 
         double dotProduct = 0;
         double normA = 0;
@@ -131,11 +130,10 @@ public class MatchController : ControllerBase
             normB += b[i] * b[i];
         }
 
-        if (normA == 0 || normB == 0) return 1.0; // Ochrana proti dělení nulou
+        if (normA == 0 || normB == 0) return 1.0;
 
         double similarity = dotProduct / (Math.Sqrt(normA) * Math.Sqrt(normB));
 
-        // Kosinová vzdálenost je 1 - kosinová podobnost
         return 1.0 - similarity;
     }
 

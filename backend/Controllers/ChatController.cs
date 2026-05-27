@@ -92,7 +92,7 @@ public class ChatController : ControllerBase
         await _hubContext.Clients.Group($"candidate_{candidateId}").SendAsync("ReceiveMessage", wsPayload);
         await _hubContext.Clients.Group($"company_{companyId}").SendAsync("ReceiveMessage", wsPayload);
 
-        return Ok(new { message = "Message sent successfully", data = message });
+        return Ok(new { message = "Message sent successfully", data = wsPayload });
     }
 
     [HttpPost("{chatId}/read")] // POST /api/chat/:id/read
