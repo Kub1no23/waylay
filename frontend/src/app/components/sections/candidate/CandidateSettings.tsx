@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "../../ui/Button";
+import { useUser } from "../../../../context/UserContext";
 
 // Icons
 function SaveIcon({ className }: { className?: string }) {
@@ -97,12 +98,13 @@ interface PasswordForm {
 }
 
 const initialSettings: AccountSettings = {
-  email: "alex.johnson@example.com",
+  email: "", // Swapped fallback placeholder out
   emailNotifications: true,
   messageNotifications: true,
 };
 
 export function CandidateSettings() {
+  const { userProfile } = useUser();
   const [settings, setSettings] = useState<AccountSettings>(initialSettings);
   const [passwordForm, setPasswordForm] = useState<PasswordForm>({
     currentPassword: "",
@@ -114,6 +116,16 @@ export function CandidateSettings() {
   const [settingsSaveSuccess, setSettingsSaveSuccess] = useState(false);
   const [passwordSaveSuccess, setPasswordSaveSuccess] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+
+  // Sync profile context email cleanly with component state
+  useEffect(() => {
+    if (userProfile?.email) {
+      setSettings((prev) => ({
+        ...prev,
+        email: userProfile.email,
+      }));
+    }
+  }, [userProfile]);
 
   const handleSaveSettings = async () => {
     setIsSavingSettings(true);
@@ -181,7 +193,7 @@ export function CandidateSettings() {
               <input
                 id="email"
                 type="email"
-                value={settings.email}
+                value={settings.email || "Loading profile data..."}
                 readOnly
                 className="w-full cursor-not-allowed rounded-lg border border-input bg-muted px-3 py-2.5 text-sm text-muted-foreground"
               />

@@ -107,38 +107,23 @@ export default function LoginPage() {
                 <label htmlFor="password" className="text-sm font-medium">
                   Password
                 </label>
-
-                {/* FIX: Link uses "to", not href */}
-                <Link
-                  to="/forgot-password"
-                  className="text-xs text-muted-foreground hover:text-accent"
-                >
-                  Forgot password?
-                </Link>
               </div>
 
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={isLoading}
-                  className="pr-10"
-                />
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
+                className="pr-2"
+              />
 
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2"
-                >
-                  {showPassword ? (
-                    <EyeOffIcon className="size-4" />
-                  ) : (
-                    <EyeIcon className="size-4" />
-                  )}
-                </button>
-              </div>
+              <Link
+                to="/forgot-password"
+                className="text-xs text-muted-foreground hover:text-accent self-end"
+              >
+                Forgot password?
+              </Link>
             </div>
 
             <Button

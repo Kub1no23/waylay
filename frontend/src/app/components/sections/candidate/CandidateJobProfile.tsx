@@ -1,122 +1,285 @@
 "use client";
 
-import { useState } from "react";
-import { Button } from "../../ui/Button";
+import { useState, useEffect } from "react";
+import { API } from "../../../../api/auth"; // this path is correct do not change
+import { Button } from "../../../components/ui/Button";
+import { Save, Loader2, Search, X, Check } from "lucide-react";
 
-// Icons
-function SaveIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
-      <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7" />
-      <path d="M7 3v4a1 1 0 0 0 1 1h7" />
-    </svg>
-  );
-}
-
-function LoaderIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={`animate-spin ${className}`}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-    </svg>
-  );
-}
-
-function CheckIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M20 6 9 17l-5-5" />
-    </svg>
-  );
+interface FlagItem {
+  id: number;
+  name: string;
+  category?: string;
 }
 
 interface ProfileData {
+  id?: number;
   title: string;
   headline: string;
   summary: string;
   location: string;
   remotePreference: string;
-  yearsExperience: string;
-  githubUrl: string;
-  portfolioUrl: string;
+  yearsExperience: number;
+  isActive: boolean;
+  flags: FlagItem[];
 }
 
 const initialProfile: ProfileData = {
-  title: "Senior Frontend Engineer",
-  headline: "Building scalable web applications with React and TypeScript",
-  summary:
-    "Passionate software engineer with 5+ years of experience building modern web applications. I specialize in React, TypeScript, and Node.js, with a focus on creating intuitive user experiences and maintaining clean, testable code.",
-  location: "San Francisco, CA",
-  remotePreference: "hybrid",
-  yearsExperience: "5",
-  githubUrl: "https://github.com/alexjohnson",
-  portfolioUrl: "https://alexjohnson.dev",
+  title: "",
+  headline: "",
+  summary: "",
+  location: "",
+  remotePreference: "Hybrid",
+  yearsExperience: 0,
+  isActive: true,
+  flags: [],
 };
 
 export default function CandidateJobProfile() {
+  const [serverProfile, setServerProfile] =
+    useState<ProfileData>(initialProfile);
   const [profile, setProfile] = useState<ProfileData>(initialProfile);
+
+  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const handleSave = async () => {
-    setIsSaving(true);
-    setSaveSuccess(false);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsSaving(false);
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 3000);
+  // Search & Debounce States for system flags
+  const [searchQuery, setSearchQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<FlagItem[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  // 1. Initial Load: Fetch existing profile data (Includes user flags)
+  // 1. Initial Load: Fetch existing profile data AND merge flag assignments
+  useEffect(() => {
+    async function fetchProfile() {
+      try {
+        const res = await API.get("/profile/my");
+
+        if (res.data && Array.isArray(res.data) && res.data.length > 0) {
+          const activeProfile = res.data[0];
+          let profileFlags: FlagItem[] = activeProfile.flags || [];
+
+          // BACKEND SYNC PATCH: If flags aren't loaded automatically by the profile model route,
+          // pull them directly from the flags database context using your profile's unique ID
+          if (activeProfile.id && profileFlags.length === 0) {
+            try {
+              // Hits search targeting only flags currently bound to your specific profile
+              const flagRes = await API.get(`/flag`, {
+                params: { profileId: activeProfile.id, page: 1 },
+              });
+              if (flagRes.data && flagRes.data.data) {
+                profileFlags = flagRes.data.data;
+              }
+            } catch (flagErr) {
+              console.warn(
+                "Could not lazily pull assigned profile flags:",
+                flagErr,
+              );
+            }
+          }
+
+          const fetchedData: ProfileData = {
+            id: activeProfile.id,
+            title: activeProfile.title || "",
+            headline: activeProfile.headline || "",
+            summary: activeProfile.summary || "",
+            location: activeProfile.location || "",
+            remotePreference: activeProfile.remotePreference || "Hybrid",
+            yearsExperience: Number(activeProfile.yearsExperience) || 0,
+            isActive: activeProfile.isActive ?? true,
+            flags: profileFlags, // Safely mapped to your UI state
+          };
+
+          setServerProfile(fetchedData);
+          setProfile(fetchedData);
+        }
+      } catch (err) {
+        console.error("Error loading profile:", err);
+        setErrorMessage("Failed to load profile data from server.");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchProfile();
+  }, []);
+
+  // 2. Debounced Automatic Search Logic
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSuggestions([]);
+      return;
+    }
+
+    setIsSearching(true);
+
+    const delayDebounceFn = setTimeout(async () => {
+      try {
+        const res = await API.get(`/flag`, {
+          params: { q: searchQuery, page: 1 },
+        });
+
+        const filtered = (res.data.data || []).filter(
+          (suggested: FlagItem) =>
+            !profile.flags.some((f) => f.id === suggested.id),
+        );
+        setSuggestions(filtered);
+      } catch (err) {
+        console.error("Error fetching autofill tags:", err);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery, profile.flags]);
+
+  const selectSuggestion = (flag: FlagItem) => {
+    setProfile((prev) => ({
+      ...prev,
+      flags: [...prev.flags, flag],
+    }));
+    setSearchQuery("");
+    setSuggestions([]);
   };
 
-  const hasChanges = JSON.stringify(profile) !== JSON.stringify(initialProfile);
+  const removeFlag = (flagId: number) => {
+    setProfile((prev) => ({
+      ...prev,
+      flags: prev.flags.filter((f) => f.id !== flagId),
+    }));
+  };
+
+  // 3. Active Save Execution with Custom Flag Transaction Reconciliation
+  const handleSave = async () => {
+    if (isSaving) return;
+
+    setIsSaving(true);
+    setSaveSuccess(false);
+    setErrorMessage("");
+
+    try {
+      let savedProfile: ProfileData;
+
+      if (profile.id) {
+        // Step A: Update baseline profile table values
+        const res = await API.put(`/profile/${profile.id}`, {
+          title: profile.title,
+          headline: profile.headline,
+          summary: profile.summary,
+          location: profile.location,
+          remotePreference: profile.remotePreference,
+          yearsExperience: profile.yearsExperience,
+          isActive: true,
+        });
+        savedProfile = res.data.profile || res.data;
+
+        // Step B: Calculate original state differences for flag syncing
+        const originalFlags = serverProfile.flags || [];
+
+        const flagsToRemove = originalFlags
+          .filter((orig) => !profile.flags.some((f) => f.id === orig.id))
+          .map((f) => f.id);
+
+        const flagsToAdd = profile.flags.filter(
+          (f) => !originalFlags.some((orig) => orig.id === f.id),
+        );
+
+        // Step C: Dispatch delete payload to database context if removals exist
+        if (flagsToRemove.length > 0) {
+          await API.delete(`/profile/${profile.id}/flag`, {
+            data: { flagIds: flagsToRemove },
+          });
+        }
+
+        // Step D: Dispatch structured Record dictionary weight values for additions
+        if (flagsToAdd.length > 0) {
+          const flagPayload: Record<number, number> = {};
+          flagsToAdd.forEach((f) => {
+            flagPayload[f.id] = 1.0; // Sets required Weight DTO field matching backend default
+          });
+          await API.post(`/profile/${profile.id}/flag`, { flags: flagPayload });
+        }
+
+        savedProfile.flags = profile.flags || [];
+      } else {
+        // Handle fallback initialization if user profile record doesn't exist yet
+        const res = await API.post("/profile", {
+          title: profile.title,
+          headline: profile.headline,
+          summary: profile.summary,
+          location: profile.location,
+          remotePreference: profile.remotePreference,
+          yearsExperience: profile.yearsExperience,
+        });
+        savedProfile = res.data.profile || res.data;
+
+        if (profile.flags.length > 0 && savedProfile.id) {
+          const flagPayload: Record<number, number> = {};
+          profile.flags.forEach((f) => {
+            flagPayload[f.id] = 1.0;
+          });
+          await API.post(`/profile/${savedProfile.id}/flag`, {
+            flags: flagPayload,
+          });
+        }
+        savedProfile.flags = profile.flags || [];
+      }
+
+      // Re-normalize layout model constraints safely
+      const normalized: ProfileData = {
+        ...savedProfile,
+        yearsExperience: Number(savedProfile.yearsExperience) || 0,
+      };
+
+      setServerProfile(normalized);
+      setProfile(normalized);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err: any) {
+      console.error("Error saving profile details:", err);
+      const serverMsg =
+        err.response?.data?.title ||
+        "An error occurred while communicating with the backend.";
+      setErrorMessage(serverMsg);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const hasChanges = JSON.stringify(profile) !== JSON.stringify(serverProfile);
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-100 items-center justify-center">
+        {/* keep at min-h-100 */}
+        <Loader2 className="size-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 lg:p-6">
-      <div className="mx-auto max-w-2xl">
+      <div className="mx-auto max-w-2xl rounded-xl bg-card border border-border p-5 lg:p-6 shadow-sm">
         <div className="mb-6">
           <h2 className="text-lg font-semibold text-foreground">
             Your Profile
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            This information will be visible to companies who reach out to you.
+            This information will be used to match you with relevant job
+            opportunities.
           </p>
         </div>
 
+        {errorMessage && (
+          <div className="mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+            {errorMessage}
+          </div>
+        )}
+
         <div className="space-y-5">
           {/* Professional Title */}
-          <div className="rounded-xl bg-card border border-border p-4">
+          <div>
             <label
               htmlFor="title"
               className="mb-2 block text-sm font-medium text-foreground"
@@ -130,13 +293,13 @@ export default function CandidateJobProfile() {
               onChange={(e) =>
                 setProfile((prev) => ({ ...prev, title: e.target.value }))
               }
-              className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+              className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/20 shadow-sm"
               placeholder="e.g., Senior Software Engineer"
             />
           </div>
 
           {/* Headline */}
-          <div className="rounded-xl bg-card border border-border p-4">
+          <div>
             <label
               htmlFor="headline"
               className="mb-2 block text-sm font-medium text-foreground"
@@ -150,8 +313,8 @@ export default function CandidateJobProfile() {
               onChange={(e) =>
                 setProfile((prev) => ({ ...prev, headline: e.target.value }))
               }
-              className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
-              placeholder="A brief tagline about yourself"
+              className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/20 shadow-sm"
+              placeholder="e.g., Building scalable web applications with React and TypeScript"
             />
             <p className="mt-2 text-xs text-muted-foreground">
               A short tagline that appears below your name
@@ -159,7 +322,7 @@ export default function CandidateJobProfile() {
           </div>
 
           {/* Summary */}
-          <div className="rounded-xl bg-card border border-border p-4">
+          <div>
             <label
               htmlFor="summary"
               className="mb-2 block text-sm font-medium text-foreground"
@@ -173,14 +336,14 @@ export default function CandidateJobProfile() {
               onChange={(e) =>
                 setProfile((prev) => ({ ...prev, summary: e.target.value }))
               }
-              className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
-              placeholder="Tell companies about your experience and what you're looking for..."
+              className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/20 shadow-sm"
+              placeholder="e.g., Passionate software engineer with 5+ years of experience..."
             />
           </div>
 
           {/* Location and Remote Preference */}
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-xl bg-card border border-border p-4">
+            <div>
               <label
                 htmlFor="location"
                 className="mb-2 block text-sm font-medium text-foreground"
@@ -194,12 +357,12 @@ export default function CandidateJobProfile() {
                 onChange={(e) =>
                   setProfile((prev) => ({ ...prev, location: e.target.value }))
                 }
-                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/20 shadow-sm"
                 placeholder="e.g., San Francisco, CA"
               />
             </div>
 
-            <div className="rounded-xl bg-card border border-border p-4">
+            <div>
               <label
                 htmlFor="remotePreference"
                 className="mb-2 block text-sm font-medium text-foreground"
@@ -215,103 +378,116 @@ export default function CandidateJobProfile() {
                     remotePreference: e.target.value,
                   }))
                 }
-                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/20 text-foreground shadow-sm"
               >
-                <option value="remote">Remote only</option>
-                <option value="hybrid">Hybrid</option>
-                <option value="onsite">On-site</option>
-                <option value="flexible">Flexible</option>
+                {["Remote", "Hybrid", "Onsite"].map((policy) => (
+                  <option key={policy} value={policy}>
+                    {policy}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
 
-          {/* Years of Experience */}
-          <div className="rounded-xl bg-card border border-border p-4">
+          {/* Years of Experience Input Box matched exactly to recruiting side */}
+          <div>
             <label
               htmlFor="yearsExperience"
               className="mb-2 block text-sm font-medium text-foreground"
             >
               Years of Experience
             </label>
-            <select
+            <input
               id="yearsExperience"
+              type="number"
               value={profile.yearsExperience}
               onChange={(e) =>
                 setProfile((prev) => ({
                   ...prev,
-                  yearsExperience: e.target.value,
+                  yearsExperience: parseInt(e.target.value, 10) || 0,
                 }))
               }
-              className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
-            >
-              <option value="0-1">0-1 years</option>
-              <option value="1-3">1-3 years</option>
-              <option value="3-5">3-5 years</option>
-              <option value="5">5+ years</option>
-              <option value="10">10+ years</option>
-            </select>
+              className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/20 shadow-sm"
+              min="0"
+            />
           </div>
 
-          {/* Links */}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-xl bg-card border border-border p-4">
-              <label
-                htmlFor="githubUrl"
-                className="mb-2 block text-sm font-medium text-foreground"
-              >
-                GitHub URL
-              </label>
+          {/* System Flags Autofill Component */}
+          <div className="relative">
+            <label className="mb-2 block text-sm font-medium text-foreground">
+              Skills & Characteristics Flags
+            </label>
+            <div className="relative flex items-center">
+              <Search className="absolute left-3 size-4 text-muted-foreground" />
               <input
-                id="githubUrl"
-                type="url"
-                value={profile.githubUrl}
-                onChange={(e) =>
-                  setProfile((prev) => ({ ...prev, githubUrl: e.target.value }))
-                }
-                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
-                placeholder="https://github.com/username"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full rounded-lg border border-input bg-background pl-9 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/20 shadow-sm"
+                placeholder="Type a skill or trait to add system matching criteria..."
               />
+              {isSearching && (
+                <Loader2 className="absolute right-3 size-4 animate-spin text-muted-foreground" />
+              )}
             </div>
 
-            <div className="rounded-xl bg-card border border-border p-4">
-              <label
-                htmlFor="portfolioUrl"
-                className="mb-2 block text-sm font-medium text-foreground"
-              >
-                Portfolio URL
-              </label>
-              <input
-                id="portfolioUrl"
-                type="url"
-                value={profile.portfolioUrl}
-                onChange={(e) =>
-                  setProfile((prev) => ({
-                    ...prev,
-                    portfolioUrl: e.target.value,
-                  }))
-                }
-                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
-                placeholder="https://yourportfolio.com"
-              />
+            {/* Suggestions Overlay Dropdown */}
+            {suggestions.length > 0 && (
+              <ul className="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-lg border border-border bg-popover py-1 shadow-lg">
+                {suggestions.map((flag) => (
+                  <li key={flag.id}>
+                    <button
+                      type="button"
+                      onClick={() => selectSuggestion(flag)}
+                      className="w-full px-3 py-2 text-left text-sm text-popover-foreground hover:bg-accent hover:text-accent-foreground flex justify-between items-center"
+                    >
+                      <span>{flag.name}</span>
+                      {flag.category && (
+                        <span className="text-[10px] uppercase font-semibold tracking-wider text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                          {flag.category}
+                        </span>
+                      )}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {/* Rendered Selected Badges */}
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {profile.flags.map((flag) => (
+                <span
+                  key={flag.id}
+                  className="inline-flex items-center gap-1 rounded-md border border-border bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground shadow-sm"
+                >
+                  {flag.name}
+                  <button
+                    type="button"
+                    onClick={() => removeFlag(flag.id)}
+                    className="text-muted-foreground hover:text-foreground inline-flex items-center"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </span>
+              ))}
             </div>
           </div>
 
           {/* Save Button */}
-          <div className="flex items-center gap-3 pt-2">
+          <div className="flex items-center gap-3 pt-4 border-t border-border">
             <Button onClick={handleSave} disabled={isSaving || !hasChanges}>
               {isSaving ? (
                 <>
-                  <LoaderIcon className="size-4" />
+                  <Loader2 className="size-4 animate-spin" />
                   Saving...
                 </>
               ) : saveSuccess ? (
                 <>
-                  <CheckIcon className="size-4" />
+                  <Check className="size-4" />
                   Saved
                 </>
               ) : (
                 <>
-                  <SaveIcon className="size-4" />
+                  <Save className="size-4" />
                   Save Changes
                 </>
               )}

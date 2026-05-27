@@ -32,8 +32,9 @@ export type Section =
   | "job-offers";
 
 export interface SidebarUser {
-  firstName: string;
-  lastName: string;
+  firstName?: string; // Made optional to support purely company profiles
+  lastName?: string; // Made optional to support purely company profiles
+  companyName?: string; // Added to support company profile variations smoothly
   email: string;
   avatarUrl?: string;
 }
@@ -81,7 +82,8 @@ export function Sidebar({
   const isMobile = useIsMobile();
   const { userProfile } = useUser();
 
-  const profile = userProfile ?? user;
+  // Cast context user to extended SidebarUser safely if fields overlap
+  const profile = (userProfile ?? user) as SidebarUser | undefined;
 
   // Dynamically compute layout sets depending on the dashboard scope
   const groups: Array<{ title: string; items: NavItem[] }> =
@@ -159,7 +161,7 @@ export function Sidebar({
               {
                 id: "job-profile",
                 label: "Job Profile",
-                icon: <BriefcaseIcon className="size-4" />, // Reused Lucide icon here nicely
+                icon: <BriefcaseIcon className="size-4" />,
               },
             ],
           },
@@ -185,6 +187,47 @@ export function Sidebar({
     if (key === "unreadCount") return unreadCount;
     return 0;
   };
+
+  // Helper method to resolve dynamic box text values safely based on current scope role
+  const getProfileDisplayValues = () => {
+    if (!profile) {
+      return { name: "Your name", initials: "", email: "Not signed in" };
+    }
+
+    if (role === "company") {
+      const companyName = profile.companyName ?? "Company";
+      // Gets first two uppercase/alphanumeric characters or just the first item
+      const initials = companyName
+        .split(" ")
+        .map((word) => word[0])
+        .join("")
+        .substring(0, 2)
+        .toUpperCase();
+
+      return {
+        name: companyName,
+        initials: initials || "CO",
+        email: profile.email,
+      };
+    }
+
+    // Default Fallback: Candidate formatting rules
+    const firstName = profile.firstName ?? "";
+    const lastName = profile.lastName ?? "";
+    const initials = `${firstName[0] ?? ""}${lastName[0] ?? ""}`.toUpperCase();
+
+    return {
+      name: `${firstName} ${lastName}`.trim() || "Candidate",
+      initials: initials || "CA",
+      email: profile.email,
+    };
+  };
+
+  const {
+    name: displayName,
+    initials: displayInitials,
+    email: displayEmail,
+  } = getProfileDisplayValues();
 
   const buildLabel = (item: NavItem) => (
     <button
@@ -239,24 +282,21 @@ export function Sidebar({
         ))}
       </div>
 
+      {/* Profile Info Box Container */}
       <div className="mt-4 rounded-3xl border border-border bg-card p-4">
         <div className="flex items-center gap-3">
           <Avatar className="size-11">
-            <AvatarImage src={""} />
-            <AvatarFallback className="bg-muted text-muted-foreground text-sm">
-              {profile
-                ? `${profile.firstName?.[0] ?? ""}${profile.lastName?.[0] ?? ""}`
-                : "JD"}
+            <AvatarImage src={profile?.avatarUrl ?? ""} />
+            <AvatarFallback className="bg-muted text-muted-foreground text-sm font-medium">
+              {displayInitials}
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-foreground">
-              {profile
-                ? `${profile.firstName ?? ""} ${profile.lastName ?? ""}`.trim()
-                : "Your name"}
+              {displayName}
             </p>
             <p className="truncate text-xs text-muted-foreground">
-              {profile?.email ?? "Not signed in"}
+              {displayEmail}
             </p>
           </div>
         </div>
@@ -275,7 +315,7 @@ export function Sidebar({
   );
 
   return (
-    <div className="min-h-screen bg-muted/30 text-sidebar-foreground md:flex">
+    <div className="h-screen bg-muted/30 text-sidebar-foreground md:flex">
       <aside className="hidden w-72 shrink-0 border-r border-border bg-sidebar text-sidebar-foreground md:flex md:flex-col">
         {sidebarContent}
       </aside>
@@ -318,15 +358,20 @@ export function Sidebar({
           side="left"
           className="bg-sidebar text-sidebar-foreground p-0"
         >
-          <SheetHeader className="border-b border-border px-4 py-4">
-            <div>
-              <SheetTitle>Waylay</SheetTitle>
-              <SheetDescription>Navigation</SheetDescription>
+          <SheetContent
+            side="left"
+            className="bg-sidebar text-sidebar-foreground p-0"
+          >
+            <SheetHeader className="border-b border-border px-4 py-4">
+              <div>
+                <SheetTitle>Waylay</SheetTitle>
+                <SheetDescription>Navigation</SheetDescription>
+              </div>
+            </SheetHeader>
+            <div className="h-[calc(100vh-5rem)] overflow-y-auto">
+              {sidebarContent}
             </div>
-          </SheetHeader>
-          <div className="h-[calc(100vh-5rem)] overflow-y-auto">
-            {sidebarContent}
-          </div>
+          </SheetContent>
         </SheetContent>
       </Sheet>
     </div>

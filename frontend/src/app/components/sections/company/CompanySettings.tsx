@@ -1,6 +1,9 @@
-import { useState } from "react";
+"use client";
+
+import { useState, useEffect } from "react";
 import { Button } from "../../../components/ui/Button";
 import { Save, Loader2, Check, AlertTriangle } from "lucide-react";
+import { useUser } from "../../../../context/UserContext";
 
 interface PasswordForm {
   currentPassword: string;
@@ -47,6 +50,8 @@ function Toggle({ checked, onChange, label, description }: ToggleProps) {
 }
 
 export default function CompanySettings() {
+  const { userProfile } = useUser();
+
   const [passwordForm, setPasswordForm] = useState<PasswordForm>({
     currentPassword: "",
     newPassword: "",
@@ -58,11 +63,22 @@ export default function CompanySettings() {
   const [settingsSaved, setSettingsSaved] = useState(false);
   const [passwordSaved, setPasswordSaved] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+
   const [settings, setSettings] = useState({
-    email: "hr@techcorp.example.com",
+    email: "",
     newCandidateNotifications: true,
     messageNotifications: true,
   });
+
+  // Automatically load the logged-in user's email once the user profile context is available
+  useEffect(() => {
+    if (userProfile?.email) {
+      setSettings((prev) => ({
+        ...prev,
+        email: userProfile.email,
+      }));
+    }
+  }, [userProfile]);
 
   const handleSaveSettings = async () => {
     setIsSavingSettings(true);
@@ -144,9 +160,9 @@ export default function CompanySettings() {
               </label>
               <input
                 type="email"
-                value={settings.email}
+                value={settings.email || "Loading account info..."}
                 readOnly
-                className="w-full cursor-not-allowed rounded-lg border border-input bg-muted px-3 py-2.5 text-sm text-muted-foreground"
+                className="w-full cursor-not-allowed rounded-lg border border-input bg-muted px-3 py-2.5 text-sm text-muted-foreground animate-none"
               />
               <p className="mt-2 text-xs text-muted-foreground">
                 Contact support to change your email

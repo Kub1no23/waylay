@@ -125,7 +125,7 @@ export default function CandidateDashboard() {
       }
       requestCount={inboxCount}
       unreadCount={unreadCount}
-      onLogout={handleLogout} // 👈 Using corrected logout sequence handler
+      onLogout={handleLogout} // Using corrected logout sequence handler
     >
       <div className="min-h-[calc(100vh-3rem)] bg-background p-4 md:p-6">
         <div className="mb-4 text-sm font-semibold text-foreground">
