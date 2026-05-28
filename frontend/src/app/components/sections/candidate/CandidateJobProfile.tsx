@@ -49,8 +49,6 @@ export default function CandidateJobProfile() {
   const [suggestions, setSuggestions] = useState<FlagItem[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  // 1. Initial Load: Fetch existing profile data (Includes user flags)
-  // 1. Initial Load: Fetch existing profile data AND merge flag assignments
   useEffect(() => {
     async function fetchProfile() {
       try {
@@ -58,24 +56,22 @@ export default function CandidateJobProfile() {
 
         if (res.data && Array.isArray(res.data) && res.data.length > 0) {
           const activeProfile = res.data[0];
-          let profileFlags: FlagItem[] = activeProfile.flags || [];
 
-          // BACKEND SYNC PATCH: If flags aren't loaded automatically by the profile model route,
-          // pull them directly from the flags database context using your profile's unique ID
-          if (activeProfile.id && profileFlags.length === 0) {
+          // Fetch assigned flags from the new dedicated endpoint
+          let profileFlags: FlagItem[] = [];
+          if (activeProfile.id) {
             try {
-              // Hits search targeting only flags currently bound to your specific profile
-              const flagRes = await API.get(`/flag`, {
-                params: { profileId: activeProfile.id, page: 1 },
-              });
-              if (flagRes.data && flagRes.data.data) {
-                profileFlags = flagRes.data.data;
-              }
-            } catch (flagErr) {
-              console.warn(
-                "Could not lazily pull assigned profile flags:",
-                flagErr,
+              const flagRes = await API.get(
+                `/profile/${activeProfile.id}/flag`,
               );
+              profileFlags = (flagRes.data.flags || []).map(
+                (f: { flagId: number; name: string }) => ({
+                  id: f.flagId,
+                  name: f.name,
+                }),
+              );
+            } catch (flagErr) {
+              console.warn("Could not load profile flags:", flagErr);
             }
           }
 
@@ -88,7 +84,7 @@ export default function CandidateJobProfile() {
             remotePreference: activeProfile.remotePreference || "Hybrid",
             yearsExperience: Number(activeProfile.yearsExperience) || 0,
             isActive: activeProfile.isActive ?? true,
-            flags: profileFlags, // Safely mapped to your UI state
+            flags: profileFlags,
           };
 
           setServerProfile(fetchedData);

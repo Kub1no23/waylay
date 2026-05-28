@@ -48,7 +48,31 @@ export default function RecruitingProfiles() {
       setLoading(true);
       try {
         const res = await API.get("/profile/my");
-        setProfiles(res.data);
+        const rawProfiles: Profile[] = res.data || [];
+
+        // Fetch flags for each profile using the dedicated endpoint
+        const profilesWithFlags = await Promise.all(
+          rawProfiles.map(async (profile) => {
+            try {
+              const flagRes = await API.get(`/profile/${profile.id}/flag`);
+              const flags: FlagItem[] = (flagRes.data.flags || []).map(
+                (f: { flagId: number; name: string }) => ({
+                  id: f.flagId,
+                  name: f.name,
+                }),
+              );
+              return { ...profile, flags };
+            } catch (flagErr) {
+              console.warn(
+                `Could not load flags for profile ${profile.id}:`,
+                flagErr,
+              );
+              return { ...profile, flags: [] };
+            }
+          }),
+        );
+
+        setProfiles(profilesWithFlags);
       } catch (err) {
         console.error("Failed to fetch profiles:", err);
       } finally {

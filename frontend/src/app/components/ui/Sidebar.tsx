@@ -126,7 +126,7 @@ export function Sidebar({
             items: [
               {
                 id: "profile",
-                label: "Profile",
+                label: "Account Profile",
                 icon: <UserIcon className="size-4" />,
               },
               {
@@ -170,7 +170,7 @@ export function Sidebar({
             items: [
               {
                 id: "profile",
-                label: "Profile",
+                label: "Account Profile",
                 icon: <UserIcon className="size-4" />,
               },
               {

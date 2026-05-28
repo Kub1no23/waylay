@@ -45,6 +45,7 @@ interface CompanyProfileSummary {
 
 interface Candidate {
   id: string;
+  candidateUserId: number;
   name: string;
   role: string;
   avatarUrl: string;
@@ -153,17 +154,54 @@ export default function CandidateSearch({
           candidatesProfileMatches: CandidateMatch[];
         }>(`/match/lookup/${selectedProfileId}`);
 
-        setMatches(
-          (response.data.candidatesProfileMatches ?? []).map((match) => ({
-            ...match,
-            matchPercentage:
-              match.totalCompanyFlags > 0
-                ? Math.round(
-                    (match.matchedFlagsScore / match.totalCompanyFlags) * 100,
-                  )
-                : 0,
-          })),
+        const rawMatches = response.data.candidatesProfileMatches ?? [];
+        console.log(
+          "matchingDetails sample:",
+          rawMatches[0]?.matchingDetails?.[0],
         );
+
+        // Enrich each match with candidate user + profile data
+        const enriched = await Promise.all(
+          rawMatches.map(async (match) => {
+            let name: string | null = null;
+            let headline: string | null = null;
+            let location: string | null = null;
+            let summary: string | null = null;
+
+            try {
+              const userRes = await API.get(
+                `/user/candidate/${match.candidateId}`,
+              );
+              const u = userRes.data;
+              name =
+                [u.firstName, u.lastName].filter(Boolean).join(" ") || null;
+              headline = u.headline || null;
+              location = u.location || null;
+              summary = u.summary || null;
+            } catch {
+              // non-fatal
+            }
+
+            return {
+              ...match,
+              candidateName: name,
+              candidateHeadline: headline,
+              candidateLocation: location,
+              candidateSummary: summary,
+              candidateProfileTitle: null, // not accessible cross-role
+              candidateRemotePreference: null,
+              candidateYearsExperience: null,
+              matchPercentage:
+                match.totalCompanyFlags > 0
+                  ? Math.round(
+                      (match.matchedFlagsScore / match.totalCompanyFlags) * 100,
+                    )
+                  : 0,
+            };
+          }),
+        );
+
+        setMatches(enriched);
       } catch (err) {
         console.error("Failed to load candidate matches", err);
         setError(
@@ -177,6 +215,19 @@ export default function CandidateSearch({
 
     void loadMatches();
   }, [selectedProfileId]);
+
+  const handleInterested = async (candidate: Candidate) => {
+    try {
+      await API.post("/match", {
+        sourceId: 0, // backend resolves company ID from JWT, value ignored
+        targetId: candidate.candidateUserId,
+      });
+      onInterested(candidate.id);
+    } catch (err: any) {
+      const msg = err.response?.data;
+      console.error("Failed to send interest:", msg);
+    }
+  };
 
   const selectedProfile = useMemo(
     () => profiles.find((profile) => profile.id === selectedProfileId) ?? null,
@@ -200,9 +251,10 @@ export default function CandidateSearch({
       availability: "Open to offers",
       summary: match.candidateSummary ?? "",
       skills: match.matchingDetails
+        .filter((detail) => detail.score >= 80) // only real matches
         .sort((a, b) => b.score - a.score)
         .slice(0, 5)
-        .map((detail) => detail.companyFlag),
+        .map((detail) => detail.bestMatchWith),
       workExperience: [],
       education: [],
       desiredRoles: match.candidateProfileTitle
@@ -213,6 +265,7 @@ export default function CandidateSearch({
       githubUrl: "",
       portfolioUrl: "",
       linkedinUrl: "",
+      candidateUserId: match.candidateId,
     }))
     .sort((a, b) => b.matchScore - a.matchScore);
 
@@ -252,8 +305,9 @@ export default function CandidateSearch({
         onClose={() => setViewing(null)}
         showInterest
         isInterested={interestedIds.includes(viewing.id)}
+        // CandidateProfileView button — pass it through
         onInterested={() => {
-          onInterested(viewing.id);
+          handleInterested(viewing!);
           setViewing(null);
         }}
       />
@@ -404,14 +458,16 @@ export default function CandidateSearch({
                   </div>
 
                   <div className="mt-2.5 flex flex-wrap gap-1.5">
-                    {candidate.skills?.slice(0, 5).map((skill: string) => (
-                      <span
-                        key={skill}
-                        className="rounded-md border border-border bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground"
-                      >
-                        {skill}
-                      </span>
-                    ))}
+                    {candidate.skills
+                      ?.slice(0, 5)
+                      .map((skill: string, index: number) => (
+                        <span
+                          key={`${skill}-${index}`}
+                          className="rounded-md border border-border bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground"
+                        >
+                          {skill}
+                        </span>
+                      ))}
 
                     {(candidate.skills?.length ?? 0) > 5 && (
                       <span className="text-xs text-muted-foreground self-center">
@@ -436,7 +492,8 @@ export default function CandidateSearch({
                           ? "secondary"
                           : "default"
                       }
-                      onClick={() => onInterested(candidate.id)}
+                      // "Interested" button
+                      onClick={() => handleInterested(candidate)}
                       disabled={interestedIds.includes(candidate.id)}
                     >
                       <Heart
