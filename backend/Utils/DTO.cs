@@ -33,13 +33,13 @@ public class CompanyAccChangeReq
 {
     [EmailAddress(ErrorMessage = "Invalid email format")]
     [StringLength(255)]
-    public required string Email { get; set; }
+    public string? Email { get; set; }
 
     [StringLength(255, MinimumLength = 6, ErrorMessage = "Password must be at least 6 characters long")]
-    public required string Password { get; set; }
+    public string? Password { get; set; }
 
     [StringLength(255)]
-    public required string Name { get; set; }
+    public string? Name { get; set; }
 
     [StringLength(255)]
     public string? Headquarters { get; set; }
@@ -92,16 +92,16 @@ public class CandidateAccChangeReq
 {
     [EmailAddress(ErrorMessage = "Invalid email format")]
     [StringLength(255)]
-    public required string Email { get; set; }
+    public string? Email { get; set; }
 
     [StringLength(255, MinimumLength = 6, ErrorMessage = "Password must be at least 6 characters long")]
-    public required string Password { get; set; }
+    public string? Password { get; set; }
 
     [StringLength(100)]
-    public required string FirstName { get; set; }
+    public string? FirstName { get; set; }
 
     [StringLength(100)]
-    public required string LastName { get; set; }
+    public string? LastName { get; set; }
 
     [StringLength(255)]
     public string? Location { get; set; }
