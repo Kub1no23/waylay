@@ -45,7 +45,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [connection, setConnection] = useState<HubConnection | null>(null);
-    const [processedMessageIds, setProcessedMessageIds] = useState<number[]>([]);
+    const [wsMessagesByChat, setWsMessagesByChat] = useState<Record<number, number[]>>({});
     const [processedMatchIds, setProcessedMatchIds] = useState<number[]>([]);
 
     useEffect(() => {
@@ -65,14 +65,26 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             .configureLogging(LogLevel.Information)
             .build();
         conn.on("ReceiveMessage", (payload: any) => {
-            console.log("ReceiveMessage", payload);
-            setProcessedMessageIds((prevIds) => {
-                if (prevIds.includes(payload.chatId)) {
-                    return prevIds;
+            console.log("ReceiveMessage payload:", payload);
+
+            const chatId = payload?.chatId;
+            const msgId = payload?.id;
+
+            if (!chatId || !msgId) return;
+
+            setWsMessagesByChat((prev) => {
+                const currentChatMsgs = prev[chatId] || [];
+
+                if (currentChatMsgs.includes(msgId)) {
+                    return prev;
                 }
 
-                setUnreadCount((count) => count + 1);
-                return [...prevIds, payload.chatId];
+                setUnreadCount(prev => prev + 1);
+
+                return {
+                    ...prev,
+                    [chatId]: [...currentChatMsgs, msgId]
+                };
             });
         });
         conn.on("Notification_Match", (payload: any) => {

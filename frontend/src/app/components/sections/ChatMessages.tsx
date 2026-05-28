@@ -153,11 +153,29 @@ export default function ChatsMessages({ chatInfo }: { chatInfo: ChatInfo }) {
 
             sendRead();
         };
+        const handleReadReceipt = (chatId: number, currentUserId: number) => {
+            console.log("Received read receipt via websocket", { chatId, currentUserId });
+            setChatHistory((prev) => {
+                if (!prev || prev.chatId !== chatId) return prev;
+                return {
+                    ...prev,
+                    messages: prev.messages.map((m) => ({
+                        ...m,
+                        isRead: m.senderId !== currentUserId ? true : m.isRead,
+                    })),
+                } as ChatHistory;
+            });
+        };
 
         connection.on("ReceiveMessage", handleReceiveMessage);
 
+        connection.on("ReceiveReadReceipt", (chatId: number, currentUserId: number) => {
+            handleReadReceipt(chatId, currentUserId);
+        });
+
         return () => {
             connection.off("ReceiveMessage", handleReceiveMessage);
+            connection.off("ReceiveReadReceipt", handleReadReceipt);
         };
     }, [user]);
 
