@@ -8,6 +8,7 @@ import { CandidateProfile } from "../components/sections/candidate/CandidateProf
 import { CandidateSettings } from "../components/sections/candidate/CandidateSettings";
 import { CandidateInbox } from "../components/sections/candidate/CandidateInbox";
 import { ChatsView } from "../components/sections/ChatsView";
+import ChatsPreview from "../components/sections/ChatsPreview";
 
 export type Company = {
   id: string;
@@ -112,7 +113,7 @@ export default function CandidateDashboard() {
           />
         );
       case "chats":
-        return <ChatsView />;
+        return <ChatsPreview />;
       default:
         return null;
     }

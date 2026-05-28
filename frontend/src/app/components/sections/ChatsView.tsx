@@ -11,6 +11,7 @@ import { CompanyProfileView } from "./candidate/CompanyProfileView";
 import { useAuth } from "../../../api/AuthContext";
 import { API } from "../../../api/auth";
 import { useUser } from "../../../context/UserContext";
+import ChatThread from "./ChatThread";
 
 // Icons
 function MessageSquareIcon({ className }: { className?: string }) {
@@ -164,7 +165,7 @@ interface ChatPreview {
   candidateAvatar?: string;
 }
 
-interface Message {
+interface NormalizedMessage {
   id: number;
   sender: number;
   content: string;
@@ -173,7 +174,7 @@ interface Message {
 }
 
 // Exact backend response shape for GET /chat/{id}
-interface BackendMessage {
+interface Message {
   Id: number;
   Sender: number;
   Content: string;
@@ -181,11 +182,11 @@ interface BackendMessage {
   IsRead: boolean;
 }
 
-interface BackendChatHistory {
+interface ChatHistory {
   chatId: number;
   CreatedAt: string;
   UpdatedAt: string;
-  Messages: BackendMessage[];
+  Messages: Message[];
 }
 
 interface ChatsViewProps {
@@ -194,9 +195,9 @@ interface ChatsViewProps {
 
 export function ChatsView({ isCompany = false }: ChatsViewProps) {
   const auth = useAuth();
-  const { connection } = useUser();
+  const { connection, setUnreadCount } = useUser();
   const [chats, setChats] = useState<ChatPreview[]>([]);
-  const [selectedChat, setSelectedChat] = useState<BackendChatHistory | null>(null);
+  const [selectedChat, setSelectedChat] = useState<ChatHistory | null>(null);
   const [selectedPreview, setSelectedPreview] = useState<ChatPreview | null>(null);
   const [typingState, setTypingState] = useState<{ chatId: number; sender: number; expiresAt: number } | null>(null);
   const [viewingCompany, setViewingCompany] = useState<{
@@ -217,6 +218,93 @@ export function ChatsView({ isCompany = false }: ChatsViewProps) {
 
   useEffect(() => {
     if (!connection || !auth.userId) return;
+    // Helper: normalize incoming payload into Message-like shape
+    const normalizePayloadToMessage = (payload: any) => {
+      const chatIdRaw = payload?.chatId ?? payload?.ChatId;
+      const chatId = typeof chatIdRaw === "string" ? parseInt(chatIdRaw, 10) : chatIdRaw;
+      const sender = payload?.sender ?? payload?.SenderId ?? payload?.Sender;
+      const content = payload?.content ?? payload?.Text ?? payload?.Content ?? "";
+      const createdAt = payload?.createdAt ?? payload?.Timestamp ?? payload?.CreatedAt ?? new Date().toISOString();
+      const id = payload?.id ?? payload?.Id ?? `${chatId}-${sender}-${createdAt}`;
+
+      return {
+        chatId,
+        message: {
+          Id: id,
+          Sender: sender,
+          Content: content,
+          CreatedAt: createdAt,
+          IsRead: payload?.isRead ?? false,
+        } as any,
+      };
+    };
+
+    // Helper: append message to lists and selected chat atomically
+    const appendIncomingMessage = (chatId: number, msg: Message) => {
+      // update chats list preview
+      setChats((prev) =>
+        prev.map((c) =>
+          c.chatId === chatId
+            ? {
+              ...c,
+              latestMessage: {
+                id: (msg as any).Id,
+                sender: msg.Sender,
+                content: msg.Content,
+                createdAt: msg.CreatedAt,
+                isRead: msg.IsRead ?? false,
+              },
+              updatedAt: msg.CreatedAt,
+            }
+            : c,
+        ),
+      );
+
+      // update selectedPreview
+      setSelectedPreview((prev) => {
+        if (!prev || prev.chatId !== chatId) return prev;
+        return {
+          ...prev,
+          latestMessage: {
+            id: (msg as any).Id,
+            sender: msg.Sender,
+            content: msg.Content,
+            createdAt: msg.CreatedAt,
+            isRead: msg.IsRead ?? false,
+          },
+        } as ChatPreview;
+      });
+
+      // update selected chat messages if open
+      setSelectedChat((prev) => {
+        if (!prev || prev.chatId !== chatId) return prev;
+
+        // dedupe by Id
+        const existing = ((prev as any).Messages ?? []).some((m: any) => String(m.Id) === String((msg as any).Id));
+        if (existing) return prev;
+
+        return {
+          ...prev,
+          Messages: [...((prev as any).Messages ?? []), msg as any],
+        } as ChatHistory;
+      });
+    };
+
+    const handleReceiveMessage = (payload: any) => {
+      const { chatId, message } = normalizePayloadToMessage(payload);
+      if (!chatId) return;
+
+      // Always update preview/chats list
+      appendIncomingMessage(chatId, message);
+
+      // If the chat is open, mark read and decrement global unread
+      if (selectedChat && selectedChat.chatId === chatId) {
+        try {
+          setUnreadCount((count) => Math.max(0, count - 1));
+        } catch (e) { }
+        void markMessagesAsRead(chatId);
+      }
+    };
 
     const handleTypingSignal = (chatId: number, senderId: number, isTyping: boolean) => {
       if (senderId === auth.userId) return;
@@ -257,7 +345,7 @@ export function ChatsView({ isCompany = false }: ChatsViewProps) {
         return {
           ...prev,
           Messages: updatedMessages,
-        } as BackendChatHistory;
+        } as ChatHistory;
       });
 
       setSelectedPreview((prev) => {
@@ -287,14 +375,16 @@ export function ChatsView({ isCompany = false }: ChatsViewProps) {
       );
     };
 
+    connection.on("ReceiveMessage", handleReceiveMessage);
     connection.on("ReceiveTypingSignal", handleTypingSignal);
     connection.on("ReceiveReadReceipt", handleReadReceipt);
 
     return () => {
+      connection.off("ReceiveMessage", handleReceiveMessage);
       connection.off("ReceiveTypingSignal", handleTypingSignal);
       connection.off("ReceiveReadReceipt", handleReadReceipt);
     };
-  }, [connection, auth.userId]);
+  }, [connection, auth.userId, selectedChat?.chatId]);
 
   useEffect(() => {
     if (!typingState) return;
@@ -358,13 +448,26 @@ export function ChatsView({ isCompany = false }: ChatsViewProps) {
     }
   };
 
-  const loadChatHistory = async (chatId: number): Promise<BackendChatHistory | null> => {
+  const loadChatHistory = async (chatId: number): Promise<ChatHistory | null> => {
     setError(null);
 
     try {
-      const response = await API.get<BackendChatHistory>(`/chat/${chatId}`);
-      console.log(response.data);
-      return response.data ?? null;
+      const response = await API.get<ChatHistory>(`/chat/${chatId}`);
+      const data = response.data;
+      console.log(data);
+
+      // Count unread messages and decrease unread count
+      if (data && data.Messages) {
+        const unreadCount = data.Messages.filter(
+          (msg) => !msg.IsRead && msg.Sender !== auth.userId
+        ).length;
+
+        if (unreadCount > 0) {
+          setUnreadCount((count) => Math.max(0, count - unreadCount));
+        }
+      }
+
+      return data ?? null;
     } catch (err) {
       console.error("Failed to load chat history", err);
       setError(err instanceof Error ? err.message : "Failed to load chat history");
@@ -420,7 +523,7 @@ export function ChatsView({ isCompany = false }: ChatsViewProps) {
     }
 
     const raw = (chat as any).messages ?? (chat as any).Messages ?? [];
-    const msgs: Message[] = raw.map((m: any) => ({
+    const msgs: NormalizedMessage[] = raw.map((m: any) => ({
       id: m.id ?? m.Id,
       sender: m.sender ?? m.Sender,
       content: m.content ?? m.Content,
@@ -461,7 +564,7 @@ export function ChatsView({ isCompany = false }: ChatsViewProps) {
             return {
               ...(prev as any),
               Messages: [...(prev as any).Messages, sentMessage],
-            } as BackendChatHistory;
+            } as ChatHistory;
           }
 
           // fallback for normalized shape
@@ -483,6 +586,16 @@ export function ChatsView({ isCompany = false }: ChatsViewProps) {
               : c,
           ),
         );
+
+        // Broadcast via websocket to ensure real-time delivery
+        try {
+          if (connection?.state === "Connected") {
+            await connection.invoke("SendMessage", String(selectedPreview?.chatId ?? selectedChat?.chatId), content);
+          }
+        } catch (wsErr) {
+          console.warn("Failed to broadcast message via websocket", wsErr);
+        }
+
         setError(null);
       }
     } catch (err) {
@@ -632,206 +745,4 @@ export function ChatsView({ isCompany = false }: ChatsViewProps) {
   );
 }
 
-interface ChatThreadProps {
-  chat: BackendChatHistory;
-  preview?: ChatPreview | null;
-  typingState?: { chatId: number; sender: number; expiresAt: number } | null;
-  isCompany: boolean;
-  onBack: () => void;
-  onViewCompany: () => void;
-  onSendMessage: (content: string) => void;
-}
-
-function ChatThread({
-  chat,
-  preview,
-  typingState,
-  isCompany,
-  onBack,
-  onViewCompany,
-  onSendMessage,
-}: ChatThreadProps) {
-  const auth = useAuth();
-  const currentUserId = auth.userId;
-  const [message, setMessage] = useState("");
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-
-  // normalize messages from backend-shaped or normalized chat
-  const normalizedMessages: Message[] = ((chat as any).messages ?? (chat as any).Messages ?? []).map((m: any) => ({
-    id: m.id ?? m.Id,
-    sender: m.sender ?? m.Sender,
-    content: m.content ?? m.Content,
-    createdAt: m.createdAt ?? m.CreatedAt,
-    isRead: m.isRead ?? m.IsRead ?? false,
-  }));
-
-  const isTyping = typingState?.chatId === chat.chatId && typingState.sender !== currentUserId;
-  const typingSeconds = isTyping
-    ? Math.max(1, Math.ceil((typingState.expiresAt - Date.now()) / 1000))
-    : 0;
-
-  const lastReadOutgoingMessageId = normalizedMessages.reduce<number | null>((acc, msg) => {
-    if (msg.sender === currentUserId && msg.isRead) {
-      return msg.id;
-    }
-    return acc;
-  }, null);
-
-  const msgCount = normalizedMessages.length;
-
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [msgCount]);
-
-  const handleSend = () => {
-    if (!message.trim()) return;
-    onSendMessage(message.trim());
-    setMessage("");
-    inputRef.current?.focus();
-  };
-
-  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
-  const name = isCompany
-    ? preview?.candidateName ?? preview?.displayName ?? `Chat ${chat.chatId}`
-    : preview?.company?.name ?? preview?.displayName ?? `Chat ${chat.chatId}`;
-  const avatar = isCompany ? preview?.candidateAvatar ?? preview?.avatarUrl : preview?.company?.logo ?? preview?.avatarUrl;
-  const initial = name ? name[0] : "?";
-  const subtitle = preview?.role
-    ? isCompany
-      ? preview.role
-      : `${preview.role}${preview.recruiterName ? ` • ${preview.recruiterName}` : ""}`
-    : "Conversation";
-
-  return (
-    <div className="flex h-full flex-col">
-      {/* Header */}
-      <div className="flex items-center gap-3 border-b border-border bg-card px-4 py-3">
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={onBack}
-          className="shrink-0"
-        >
-          <ArrowLeftIcon className="size-4" />
-          <span className="sr-only">Back to chats</span>
-        </Button>
-
-        <Avatar className="size-9 shrink-0 border border-border">
-          <AvatarImage src={avatar} />
-          <AvatarFallback className="bg-muted text-muted-foreground text-xs">
-            {initial}
-          </AvatarFallback>
-        </Avatar>
-
-        <div className="min-w-0 flex-1">
-          <h2 className="text-sm font-semibold text-foreground truncate">
-            {name}
-          </h2>
-          <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
-        </div>
-
-        {!isCompany && preview?.company?.name && (
-          <Button variant="outline" size="sm" onClick={onViewCompany}>
-            <BuildingIcon className="size-4" />
-            <span className="hidden sm:inline">Company</span>
-          </Button>
-        )}
-      </div>
-
-      {/* Messages */}
-      <div className="flex-1 overflow-auto p-4" ref={scrollRef}>
-        <div className="mx-auto max-w-2xl space-y-3">
-          {normalizedMessages.map((msg: Message) => {
-            const isIncoming = currentUserId ? msg.sender !== currentUserId : true;
-
-            return (
-              <div
-                key={msg.id}
-                className={`flex ${isIncoming ? "justify-start" : "justify-end"}`}
-              >
-                <div className="flex flex-col items-end gap-1">
-                  <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${isIncoming
-                      ? "bg-card border border-border text-foreground rounded-bl-md"
-                      : "bg-primary text-primary-foreground rounded-br-md"
-                      }`}
-                  >
-                    <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                      {msg.content}
-                    </p>
-                    <p
-                      className={`mt-1.5 text-[10px] ${isIncoming
-                        ? "text-muted-foreground"
-                        : "text-primary-foreground/70"
-                        }`}
-                    >
-                      {formatMessageTime(new Date(msg.createdAt))}
-                    </p>
-                  </div>
-                  {!isIncoming && msg.id === lastReadOutgoingMessageId && (
-                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                      <EyeIcon className="size-3" />
-                      <span>Seen</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        {isTyping && (
-          <div className="mx-auto mt-3 max-w-2xl rounded-2xl border border-border bg-muted p-3 text-sm text-muted-foreground">
-            User is typing for {typingSeconds}s
-          </div>
-        )}
-      </div>
-
-      {/* Message Input */}
-      <div className="border-t border-border bg-card p-4">
-        <div className="mx-auto max-w-2xl">
-          <div className="flex items-end gap-3">
-            <textarea
-              ref={inputRef}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Type a message..."
-              rows={1}
-              className="flex-1 resize-none rounded-xl border border-input bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20 max-h-32"
-              style={{
-                height: "auto",
-                minHeight: "48px",
-              }}
-              onInput={(e) => {
-                const target = e.target as HTMLTextAreaElement;
-                target.style.height = "auto";
-                target.style.height = `${Math.min(target.scrollHeight, 128)}px`;
-              }}
-            />
-            <Button
-              onClick={handleSend}
-              disabled={!message.trim()}
-              className="shrink-0 h-12 w-12 rounded-xl"
-              size="icon"
-            >
-              <SendIcon className="size-4" />
-              <span className="sr-only">Send message</span>
-            </Button>
-          </div>
-          <p className="mt-2 text-xs text-muted-foreground text-center">
-            Press Enter to send, Shift+Enter for new line
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
+// ChatThread moved to separate file (ChatThread.tsx)
