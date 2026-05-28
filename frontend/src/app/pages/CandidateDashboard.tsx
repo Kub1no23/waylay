@@ -12,6 +12,7 @@ import {
 // Section imports
 import { CandidateInbox } from "../components/sections/candidate/CandidateInbox";
 import { ChatsView } from "../components/sections/ChatsView";
+import ChatsPreview from "../components/sections/ChatsPreview";
 import CandidateAccount from "../components/sections/candidate/CandidateAccount";
 import { CandidateSettings } from "../components/sections/candidate/CandidateSettings";
 import CandidateJobProfile from "../components/sections/candidate/CandidateJobProfile";

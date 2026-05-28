@@ -36,6 +36,7 @@ type UserContextType = {
   loading: boolean;
   error: string | null;
   connection: HubConnection | null;
+  setUnreadCount: (value: number | ((count: number) => number)) => void;
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -48,6 +49,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [connection, setConnection] = useState<HubConnection | null>(null);
+  const [wsMessagesByChat, setWsMessagesByChat] = useState<
+    Record<number, number[]>
+  >({});
+  const [processedMatchIds, setProcessedMatchIds] = useState<number[]>([]);
 
   useEffect(() => {
     if (!auth.isAuthenticated || !auth.userId || !auth.role) {
@@ -65,13 +70,44 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       .withAutomaticReconnect()
       .configureLogging(LogLevel.Information)
       .build();
-    conn.on("ReceiveMessage", (payload: unknown) => {
-      console.log("ReceiveMessage", payload);
-      setUnreadCount((count) => count + 1);
+    conn.on("ReceiveMessage", (payload: any) => {
+      console.log("ReceiveMessage payload:", payload);
+
+      const chatId = payload?.chatId;
+      const msgId = payload?.id;
+
+      if (!chatId || !msgId) return;
+
+      setWsMessagesByChat((prev) => {
+        const currentChatMsgs = prev[chatId] || [];
+
+        if (currentChatMsgs.includes(msgId)) {
+          return prev;
+        }
+
+        setUnreadCount((prev) => prev + 1);
+
+        return {
+          ...prev,
+          [chatId]: [...currentChatMsgs, msgId],
+        };
+      });
     });
-    conn.on("Notification_Match", (payload: unknown) => {
+    conn.on("Notification_Match", (payload: any) => {
       console.log("Notification_Match", payload);
-      setInboxCount((count) => count + 1);
+      setProcessedMatchIds((prevIds) => {
+        if (prevIds.includes(payload.chatId)) {
+          return prevIds;
+        }
+
+        setInboxCount((count) => count - 1);
+        return [...prevIds, payload.chatId];
+      });
+    });
+
+    // Ensure we handle read receipts client-side to avoid server warnings
+    conn.on("ReceiveReadReceipt", (chatId: unknown, readerId: unknown) => {
+      console.log("ReceiveReadReceipt", chatId, readerId);
     });
 
     const loadUserData = async () => {
@@ -142,6 +178,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         loading,
         error,
         connection,
+        setUnreadCount,
       }}
     >
       {children}
