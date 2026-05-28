@@ -109,21 +109,23 @@ export default function LoginPage() {
                 </label>
               </div>
 
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
-                className="pr-2"
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
+                  className="pr-2"
+                />
 
-              <Link
-                to="/forgot-password"
-                className="text-xs text-muted-foreground hover:text-accent self-end"
-              >
-                Forgot password?
-              </Link>
+                <Link
+                  to="/forgot-password"
+                  className="text-xs text-muted-foreground hover:text-accent"
+                >
+                  Forgot password?
+                </Link>
+              </div>
             </div>
 
             <Button

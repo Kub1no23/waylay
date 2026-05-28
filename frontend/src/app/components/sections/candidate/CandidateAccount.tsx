@@ -2,27 +2,48 @@
 
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../../../context/AuthContext";
+import { API } from "../../../../api/auth";
+import { Button } from "../../../components/ui/Button";
+import { Save, Loader2, Check } from "lucide-react";
+import type { CandidateFormData } from "../../../../libs/types";
+// import { SanitizePayload } from "../../../../api/sanitizePayload";
 
-interface CandidateProfileState {
-  firstName: string;
-  lastName: string;
-  location: string;
-  headline: string;
-  summary: string;
-  githubUrl: string;
-  portfolioUrl: string;
-}
+// This single line copies CandidateFormData and strips the password fields.
+type CandidateProfileState = Omit<
+  CandidateFormData,
+  "password" | "confirmPassword"
+>;
+
+// Helper function to extract the User ID from a standard ASP.NET Core JWT Token
+const getUserIdFromToken = (token: string): string | null => {
+  try {
+    const payloadBase64 = token.split(".")[1];
+    const decodedJson = atob(payloadBase64);
+    const payload = JSON.parse(decodedJson);
+
+    return (
+      payload[
+        "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
+      ] ||
+      payload.nameid ||
+      payload.sub ||
+      payload.id
+    );
+  } catch (err) {
+    console.error("Failed to decode token", err);
+    return null;
+  }
+};
 
 export default function CandidateAccount() {
   const { token } = useAuth();
   const [loading, setLoading] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [message, setMessage] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>("");
 
   const [formData, setFormData] = useState<CandidateProfileState>({
+    email: "",
     firstName: "",
     lastName: "",
     location: "",
@@ -32,40 +53,46 @@ export default function CandidateAccount() {
     portfolioUrl: "",
   });
 
-  // Fetch data on mount
+  // 1. Initial Load: Fetch existing account data
   useEffect(() => {
     async function fetchProfileData() {
       if (!token) return;
+
+      const userId = getUserIdFromToken(token);
+      if (!userId) {
+        setErrorMessage("Could not verify user identity from token.");
+        return;
+      }
+
       setLoading(true);
       try {
-        const response = await fetch("/api/candidate/profile", {
+        const response = await API.get(`/user/candidate/${userId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-        if (response.ok) {
-          const data = await response.json();
-          setFormData({
-            firstName: data.firstName || "",
-            lastName: data.lastName || "",
-            location: data.location || "",
-            headline: data.headline || "",
-            summary: data.summary || "",
-            githubUrl: data.githubUrl || "",
-            portfolioUrl: data.portfolioUrl || "",
-          });
-        } else {
-          setMessage({
-            type: "error",
-            text: "Failed to load account details.",
-          });
-        }
-      } catch (err) {
-        console.error(err);
-        setMessage({
-          type: "error",
-          text: "An error occurred fetching profile.",
+
+        const data = response.data;
+
+        setFormData({
+          email: data.email || "",
+          firstName: data.firstName || "",
+          lastName: data.lastName || "",
+          location: data.location || "",
+          headline: data.headline || "",
+          summary: data.summary || "",
+          githubUrl: data.githubUrl || "",
+          portfolioUrl: data.portfolioUrl || "",
         });
+      } catch (err: any) {
+        console.error("Error loading account data:", err);
+        const serverMsg =
+          err.response?.data || "An error occurred fetching profile.";
+        setErrorMessage(
+          typeof serverMsg === "string"
+            ? serverMsg
+            : "Failed to load account details.",
+        );
       } finally {
         setLoading(false);
       }
@@ -73,38 +100,47 @@ export default function CandidateAccount() {
     fetchProfileData();
   }, [token]);
 
+  // 2. Save Changes: Explicitly map payload to guarantee fields are never dropped
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSaving) return;
+
     setIsSaving(true);
-    setMessage(null);
+    setSaveSuccess(false);
+    setErrorMessage("");
+
+    // DEFENSIVE FIX: Explicitly enforce that empty fields are sent as ""
+    // instead of letting JS accidentally omit them or turn them into undefined
+    const explicitPayload = {
+      email: formData.email,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      location: formData.location || null,
+      headline: formData.headline || null,
+      summary: formData.summary || null,
+      githubUrl: formData.githubUrl || null,
+      portfolioUrl: formData.portfolioUrl || null,
+    };
 
     try {
-      const response = await fetch("/api/candidate/profile", {
-        method: "PUT",
+      await API.put("/user/candidate", explicitPayload, {
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
       });
 
-      if (response.ok) {
-        setMessage({
-          type: "success",
-          text: "Account profile updated successfully!",
-        });
-      } else {
-        setMessage({
-          type: "error",
-          text: "Failed to save profile information.",
-        });
-      }
-    } catch (err) {
-      console.error(err);
-      setMessage({
-        type: "error",
-        text: "Server error occurred while saving.",
-      });
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err: any) {
+      console.error("Error saving account details:", err);
+      const serverMsg = err.response?.data?.errors
+        ? "Validation failed. Please ensure all required fields are valid."
+        : err.response?.data || "Server error occurred while saving.";
+      setErrorMessage(
+        typeof serverMsg === "string"
+          ? serverMsg
+          : "Failed to save profile information.",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -112,155 +148,201 @@ export default function CandidateAccount() {
 
   if (loading) {
     return (
-      <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
-        Loading account settings...
+      <div className="flex min-h-100 items-center justify-center">
+        <Loader2 className="size-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <div>
-        <h2 className="text-xl font-bold tracking-tight text-foreground">
-          Candidate Account
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          Manage your base identity configuration and personal developer URLs.
-        </p>
-      </div>
+    <div className="p-4 lg:p-6">
+      <div className="mx-auto max-w-2xl rounded-xl bg-card border border-border p-5 lg:p-6 shadow-sm">
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold text-foreground">
+            Candidate Account
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Manage your base identity configuration and personal developer URLs.
+          </p>
+        </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {message && (
-          <div
-            className={`rounded-lg p-3 text-sm font-medium ${
-              message.type === "success"
-                ? "bg-emerald-500/10 text-emerald-500"
-                : "bg-destructive/10 text-destructive"
-            }`}
-          >
-            {message.text}
+        {errorMessage && (
+          <div className="mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+            {errorMessage}
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Identity Name Row Split Grid */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label
+                htmlFor="firstName"
+                className="mb-2 block text-sm font-medium text-foreground"
+              >
+                First Name
+              </label>
+              <input
+                id="firstName"
+                type="text"
+                required
+                value={formData.firstName}
+                onChange={(e) =>
+                  setFormData((p) => ({ ...p, firstName: e.target.value }))
+                }
+                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/20 shadow-sm"
+                placeholder="John"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="lastName"
+                className="mb-2 block text-sm font-medium text-foreground"
+              >
+                Last Name
+              </label>
+              <input
+                id="lastName"
+                type="text"
+                required
+                value={formData.lastName}
+                onChange={(e) =>
+                  setFormData((p) => ({ ...p, lastName: e.target.value }))
+                }
+                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/20 shadow-sm"
+                placeholder="Doe"
+              />
+            </div>
+          </div>
+
+          {/* Location Input */}
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">
-              First Name
+            <label
+              htmlFor="location"
+              className="mb-2 block text-sm font-medium text-foreground"
+            >
+              Location
             </label>
             <input
+              id="location"
               type="text"
-              required
-              className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm"
-              value={formData.firstName}
+              value={formData.location}
               onChange={(e) =>
-                setFormData((p) => ({ ...p, firstName: e.target.value }))
+                setFormData((p) => ({ ...p, location: e.target.value }))
               }
-              placeholder="John"
+              className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/20 shadow-sm"
+              placeholder="e.g., Prague, CZ"
             />
           </div>
 
+          {/* Headline Input */}
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">
-              Last Name
+            <label
+              htmlFor="headline"
+              className="mb-2 block text-sm font-medium text-foreground"
+            >
+              Headline
             </label>
             <input
+              id="headline"
               type="text"
-              required
-              className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm"
-              value={formData.lastName}
+              value={formData.headline}
               onChange={(e) =>
-                setFormData((p) => ({ ...p, lastName: e.target.value }))
+                setFormData((p) => ({ ...p, headline: e.target.value }))
               }
-              placeholder="Doe"
+              className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/20 shadow-sm"
+              placeholder="e.g., Backend Engineer specialized in Distributed Engines"
             />
           </div>
-        </div>
 
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-foreground">
-            Location
-          </label>
-          <input
-            type="text"
-            className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm"
-            value={formData.location}
-            onChange={(e) =>
-              setFormData((p) => ({ ...p, location: e.target.value }))
-            }
-            placeholder="e.g., Prague, CZ"
-          />
-        </div>
+          {/* Summary Input */}
+          <div>
+            <label
+              htmlFor="summary"
+              className="mb-2 block text-sm font-medium text-foreground"
+            >
+              Summary
+            </label>
+            <textarea
+              id="summary"
+              rows={4}
+              value={formData.summary}
+              onChange={(e) =>
+                setFormData((p) => ({ ...p, summary: e.target.value }))
+              }
+              className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/20 shadow-sm"
+              placeholder="Provide a short synopsis of your historical experience..."
+            />
+          </div>
 
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-foreground">
-            Headline
-          </label>
-          <input
-            type="text"
-            className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm"
-            value={formData.headline}
-            onChange={(e) =>
-              setFormData((p) => ({ ...p, headline: e.target.value }))
-            }
-            placeholder="e.g., Backend Engineer specialized in Distributed Engines"
-          />
-        </div>
+          {/* GitHub Profile URL */}
+          <div>
+            <label
+              htmlFor="githubUrl"
+              className="mb-2 block text-sm font-medium text-foreground"
+            >
+              GitHub Profile URL
+            </label>
+            <input
+              id="githubUrl"
+              type="url"
+              value={formData.githubUrl}
+              onChange={(e) =>
+                setFormData((p) => ({ ...p, githubUrl: e.target.value }))
+              }
+              className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/20 shadow-sm"
+              placeholder="https://github.com/yourprofile"
+            />
+          </div>
 
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-foreground">
-            Summary
-          </label>
-          <textarea
-            rows={4}
-            className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2.5 text-sm"
-            value={formData.summary}
-            onChange={(e) =>
-              setFormData((p) => ({ ...p, summary: e.target.value }))
-            }
-            placeholder="Provide a short synopsis of your historical experience..."
-          />
-        </div>
+          {/* Portfolio Website URL */}
+          <div>
+            <label
+              htmlFor="portfolioUrl"
+              className="mb-2 block text-sm font-medium text-foreground"
+            >
+              Portfolio Website URL
+            </label>
+            <input
+              id="portfolioUrl"
+              type="url"
+              value={formData.portfolioUrl}
+              onChange={(e) =>
+                setFormData((p) => ({ ...p, portfolioUrl: e.target.value }))
+              }
+              className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/20 shadow-sm"
+              placeholder="https://yourportfolio.dev"
+            />
+          </div>
 
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-foreground">
-            GitHub Profile URL
-          </label>
-          <input
-            type="url"
-            className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm"
-            value={formData.githubUrl}
-            onChange={(e) =>
-              setFormData((p) => ({ ...p, githubUrl: e.target.value }))
-            }
-            placeholder="https://github.com/yourprofile"
-          />
-        </div>
-
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-foreground">
-            Portfolio Website URL
-          </label>
-          <input
-            type="url"
-            className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm"
-            value={formData.portfolioUrl}
-            onChange={(e) =>
-              setFormData((p) => ({ ...p, portfolioUrl: e.target.value }))
-            }
-            placeholder="https://yourportfolio.dev"
-          />
-        </div>
-
-        <div className="pt-2">
-          <button
-            type="submit"
-            disabled={isSaving}
-            className="inline-flex h-10 w-full items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50 sm:w-auto"
-          >
-            {isSaving ? "Saving..." : "Save changes"}
-          </button>
-        </div>
-      </form>
+          <div className="flex items-center gap-3 pt-4 border-t border-border">
+            <Button type="submit" disabled={isSaving}>
+              {isSaving ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Saving...
+                </>
+              ) : saveSuccess ? (
+                <>
+                  <Check className="size-4" />
+                  Saved
+                </>
+              ) : (
+                <>
+                  <Save className="size-4" />
+                  Save Changes
+                </>
+              )}
+            </Button>
+            {saveSuccess && (
+              <span className="text-sm text-muted-foreground">
+                Your account profile has been updated
+              </span>
+            )}
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
