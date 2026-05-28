@@ -9,10 +9,10 @@ import {
 } from "../components/ui/Sidebar";
 import CandidateSearch from "../components/sections/company/CandidateSearch";
 import CompanyInbox from "../components/sections/company/CompanyInbox";
-import { ChatsView } from "../components/sections/ChatsView";
 import CompanyAccount from "../components/sections/company/CompanyAccount";
 import CompanySettings from "../components/sections/company/CompanySettings";
 import RecruitingProfiles from "../components/sections/company/RecruitingProfiles";
+import ChatsPreview from "../components/sections/ChatsPreview";
 
 type Section =
   | "search"
@@ -87,7 +87,7 @@ export default function CompanyDashboard() {
             <CompanyInbox onOpenChat={() => setActiveSection("chats")} />
           )}
 
-          {activeSection === "chats" && <ChatsView isCompany={true} />}
+          {activeSection === "chats" && <ChatsPreview />}
 
           {activeSection === "job-offers" && (
             <div className="mx-auto max-w-2xl">

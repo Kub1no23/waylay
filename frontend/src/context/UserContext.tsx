@@ -54,6 +54,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   >({});
   const [processedMatchIds, setProcessedMatchIds] = useState<number[]>([]);
 
+  // REMOVE
+  processedMatchIds;
+  wsMessagesByChat;
+
   useEffect(() => {
     if (!auth.isAuthenticated || !auth.userId || !auth.role) {
       setLoading(false);

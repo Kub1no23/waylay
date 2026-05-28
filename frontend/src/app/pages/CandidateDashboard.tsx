@@ -11,7 +11,6 @@ import {
 
 // Section imports
 import { CandidateInbox } from "../components/sections/candidate/CandidateInbox";
-import { ChatsView } from "../components/sections/ChatsView";
 import ChatsPreview from "../components/sections/ChatsPreview";
 import CandidateAccount from "../components/sections/candidate/CandidateAccount";
 import { CandidateSettings } from "../components/sections/candidate/CandidateSettings";
@@ -127,7 +126,7 @@ export default function CandidateDashboard() {
         <main className="flex-1 overflow-auto">
           {activeSection === "requests" && <CandidateInbox />}
 
-          {activeSection === "chats" && <ChatsView isCompany={false} />}
+          {activeSection === "chats" && <ChatsPreview />}
 
           {/* 👈 New matching profile section rendered directly under messaging groups */}
           {activeSection === "job-profile" && <CandidateJobProfile />}
