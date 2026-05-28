@@ -12,7 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "../components/ui/Card";
-import { EyeIcon, EyeOffIcon, Loader2Icon } from "lucide-react";
+import { Loader2Icon } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
 export default function LoginPage() {
@@ -20,7 +20,7 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 

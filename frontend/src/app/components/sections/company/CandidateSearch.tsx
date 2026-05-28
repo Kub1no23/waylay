@@ -10,6 +10,7 @@ import { MapPin, Briefcase, Star, Heart, ChevronDown } from "lucide-react";
 
 import CandidateProfileView from "./CandidateProfileView";
 import { API } from "../../../../api/auth";
+import { useAuth } from "../../../../context/AuthContext";
 
 interface MatchDetail {
   companyFlag: string;
@@ -99,6 +100,22 @@ function MatchBadge({ score }: { score: number }) {
   );
 }
 
+const getUserIdFromToken = (token: string): number | null => {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    const id =
+      payload[
+        "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
+      ] ||
+      payload.nameid ||
+      payload.sub ||
+      payload.id;
+    return id ? parseInt(id) : null;
+  } catch {
+    return null;
+  }
+};
+
 export default function CandidateSearch({
   onInterested,
   interestedIds = [],
@@ -113,6 +130,7 @@ export default function CandidateSearch({
   const [loadingProfiles, setLoadingProfiles] = useState(false);
   const [loadingMatches, setLoadingMatches] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { token } = useAuth();
 
   useEffect(() => {
     const loadProfiles = async () => {
@@ -191,12 +209,23 @@ export default function CandidateSearch({
               candidateProfileTitle: null, // not accessible cross-role
               candidateRemotePreference: null,
               candidateYearsExperience: null,
-              matchPercentage:
-                match.totalCompanyFlags > 0
-                  ? Math.round(
-                      (match.matchedFlagsScore / match.totalCompanyFlags) * 100,
-                    )
-                  : 0,
+              matchPercentage: (() => {
+                if (!match.matchingDetails.length) return 0;
+
+                // Take the best candidate score per company flag, then average
+                const bestPerCompanyFlag = new Map<number, number>();
+                match.matchingDetails.forEach((d) => {
+                  const current = bestPerCompanyFlag.get(d.companyFlagId) ?? 0;
+                  if (d.score > current) {
+                    bestPerCompanyFlag.set(d.companyFlagId, d.score);
+                  }
+                });
+
+                const scores = Array.from(bestPerCompanyFlag.values());
+                return Math.round(
+                  scores.reduce((sum, s) => sum + s, 0) / scores.length,
+                );
+              })(),
             };
           }),
         );
@@ -217,15 +246,18 @@ export default function CandidateSearch({
   }, [selectedProfileId]);
 
   const handleInterested = async (candidate: Candidate) => {
+    if (!token) return;
+    const companyId = getUserIdFromToken(token);
+    if (!companyId) return;
+
     try {
       await API.post("/match", {
-        sourceId: 0, // backend resolves company ID from JWT, value ignored
+        sourceId: companyId, // ← real company ID from JWT
         targetId: candidate.candidateUserId,
       });
       onInterested(candidate.id);
     } catch (err: any) {
-      const msg = err.response?.data;
-      console.error("Failed to send interest:", msg);
+      console.error("Failed to send interest:", err.response?.data);
     }
   };
 
