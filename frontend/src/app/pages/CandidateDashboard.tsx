@@ -82,7 +82,6 @@ export default function CandidateDashboard() {
   const { inboxCount, unreadCount, loading, error } = useUser();
   const [activeSection, setActiveSection] =
     useState<CandidateSection>("requests");
-  const [requests] = useState<Request[]>([]);
 
   // Smoothly clean context and move back to landing path
   const handleLogout = () => {
@@ -108,14 +107,6 @@ export default function CandidateDashboard() {
     );
   }
 
-  const handleAcceptRequest = (requestId: string) => {
-    console.warn("accept request not wired yet", requestId);
-  };
-
-  const handleDeclineRequest = (requestId: string) => {
-    console.warn("decline request not wired yet", requestId);
-  };
-
   return (
     <Sidebar
       role="candidate"
@@ -133,13 +124,7 @@ export default function CandidateDashboard() {
         </div>
 
         <main className="flex-1 overflow-auto">
-          {activeSection === "requests" && (
-            <CandidateInbox
-              requests={requests}
-              onAccept={handleAcceptRequest}
-              onDecline={handleDeclineRequest}
-            />
-          )}
+          {activeSection === "requests" && <CandidateInbox />}
 
           {activeSection === "chats" && <ChatsView isCompany={false} />}
 
