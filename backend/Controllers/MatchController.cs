@@ -148,17 +148,22 @@ public class MatchController : ControllerBase
 
         int candidateId = currentUserRole == "candidate" ? dto.SourceId : dto.TargetId;
         int companyId = currentUserRole == "company" ? dto.SourceId : dto.TargetId;
+        bool candidateExists = await _context.Candidates.AnyAsync(c => c.Id == candidateId);
+        if (!candidateExists)
+        {
+            return NotFound($"Target candidate with ID {candidateId} does not exist");
+        }
+        bool companyExists = await _context.Companies.AnyAsync(c => c.Id == companyId);
+        if (!companyExists)
+        {
+            return NotFound($"Target company with ID {companyId} does not exist");
+        }
 
         var existingStatus = await _context.Statuses
             .FirstOrDefaultAsync(s => s.CandidateId == candidateId && s.CompanyId == companyId);
 
         if (currentUserRole == "company")
         {
-            bool candidateExists = await _context.Candidates.AnyAsync(c => c.Id == candidateId);
-            if (!candidateExists)
-            {
-                return NotFound($"Target candidate with ID {candidateId} does not exist");
-            }
 
             if (existingStatus != null)
             {
