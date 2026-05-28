@@ -12,6 +12,7 @@ import RegisterPage from "./pages/RegisterPage";
 import CandidateDashboard from "./pages/CandidateDashboard";
 import LoginPage from "./pages/LoginPage";
 import CompanyDashboard from "./pages/CompanyDashboard";
+import OnboardingPage from "./pages/OnboardingPage";
 
 const router = createBrowserRouter([
   {
@@ -42,6 +43,16 @@ const router = createBrowserRouter([
       <ProtectedRoute>
         <UserProvider>
           <CompanyDashboard />
+        </UserProvider>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/onboarding",
+    element: (
+      <ProtectedRoute>
+        <UserProvider>
+          <OnboardingPage />
         </UserProvider>
       </ProtectedRoute>
     ),

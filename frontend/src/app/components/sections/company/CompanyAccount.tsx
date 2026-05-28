@@ -158,29 +158,26 @@ export default function CompanyAccount() {
               </div>
 
               <div className="space-y-4">
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-4">
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-foreground">
-                      Company Entity Name
+                    <label
+                      htmlFor="lastName"
+                      className="mb-2 flex items-center text-sm font-medium text-foreground"
+                    >
+                      Company Name
+                      <span
+                        className="text-destructive ml-0.5 text-xs"
+                        aria-hidden="true"
+                      >
+                        *
+                      </span>
                     </label>
                     <input
                       value={form.name}
                       onChange={(e) =>
                         setForm((prev) => ({ ...prev, name: e.target.value }))
                       }
-                      className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/20"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-sm font-medium text-foreground">
-                      Corporate Email Account
-                    </label>
-                    <input
-                      type="email"
-                      value={form.email}
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, email: e.target.value }))
-                      }
+                      placeholder="e.g. Acme Corporation"
                       className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/20"
                     />
                   </div>
@@ -189,22 +186,23 @@ export default function CompanyAccount() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-foreground">
-                      Industry Sector
+                      Office Address
                     </label>
                     <input
-                      value={form.industry}
+                      value={form.address}
                       onChange={(e) =>
                         setForm((prev) => ({
                           ...prev,
-                          industry: e.target.value,
+                          address: e.target.value,
                         }))
                       }
+                      placeholder="e.g. 123 Innovation Way, Suite 400"
                       className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/20"
                     />
                   </div>
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-foreground">
-                      Headquarters Metro
+                      Headquarters
                     </label>
                     <input
                       value={form.headquarters}
@@ -222,20 +220,24 @@ export default function CompanyAccount() {
 
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-foreground">
-                    Physical Office Address
+                    Industry
                   </label>
                   <input
-                    value={form.address}
+                    value={form.industry}
                     onChange={(e) =>
-                      setForm((prev) => ({ ...prev, address: e.target.value }))
+                      setForm((prev) => ({
+                        ...prev,
+                        industry: e.target.value,
+                      }))
                     }
+                    placeholder="e.g. Financial Technology / SaaS"
                     className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/20"
                   />
                 </div>
 
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-foreground">
-                    Core Operational Overview
+                    Short Company Description
                   </label>
                   <textarea
                     rows={4}
@@ -246,6 +248,7 @@ export default function CompanyAccount() {
                         description: e.target.value,
                       }))
                     }
+                    placeholder="Provide a high-level summary of your core operations, engineering vision, and company culture"
                     className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/20"
                   />
                 </div>

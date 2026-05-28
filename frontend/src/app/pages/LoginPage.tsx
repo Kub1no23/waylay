@@ -48,11 +48,10 @@ export default function LoginPage() {
       // Capture the role directly from the login execution
       const assignedRole = login(token);
 
-      // Route dynamically based on the role
-      if (assignedRole === "company") {
-        navigate("/company/dashboard");
-      } else if (assignedRole === "candidate") {
-        navigate("/candidate/dashboard");
+      // Always route through onboarding — it will check for an existing
+      // profile and skip straight to the dashboard if one exists.
+      if (assignedRole === "company" || assignedRole === "candidate") {
+        navigate("/onboarding");
       } else {
         throw new Error("Unknown user role profile");
       }
@@ -147,7 +146,6 @@ export default function LoginPage() {
 
         <CardFooter className="flex-col gap-4 pt-0">
           <Button variant="outline" className="w-full" asChild>
-            {/* FIX: Link uses "to" */}
             <Link to="/register">Create an account</Link>
           </Button>
         </CardFooter>

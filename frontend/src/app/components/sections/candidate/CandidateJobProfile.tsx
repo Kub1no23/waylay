@@ -277,10 +277,16 @@ export default function CandidateJobProfile() {
           {/* Professional Title */}
           <div>
             <label
-              htmlFor="title"
-              className="mb-2 block text-sm font-medium text-foreground"
+              htmlFor="lastName"
+              className="mb-2 flex items-center text-sm font-medium text-foreground"
             >
-              Professional Title
+              Profession Title
+              <span
+                className="text-destructive ml-0.5 text-xs"
+                aria-hidden="true"
+              >
+                *
+              </span>
             </label>
             <input
               id="title"
@@ -410,8 +416,17 @@ export default function CandidateJobProfile() {
 
           {/* System Flags Autofill Component */}
           <div className="relative">
-            <label className="mb-2 block text-sm font-medium text-foreground">
-              Skills & Characteristics Flags
+            <label
+              htmlFor="lastName"
+              className="mb-2 flex items-center text-sm font-medium text-foreground"
+            >
+              Skills & Traits
+              <span
+                className="text-destructive ml-0.5 text-xs"
+                aria-hidden="true"
+              >
+                *
+              </span>
             </label>
             <div className="relative flex items-center">
               <Search className="absolute left-3 size-4 text-muted-foreground" />

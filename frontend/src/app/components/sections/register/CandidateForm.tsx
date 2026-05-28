@@ -41,8 +41,17 @@ export function CandidateForm({
         {/* Name */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">
+            <label
+              htmlFor="lastName"
+              className="mb-2 flex items-center text-sm font-medium text-foreground"
+            >
               First name
+              <span
+                className="text-destructive ml-0.5 text-xs"
+                aria-hidden="true"
+              >
+                *
+              </span>
             </label>
             <input
               className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
@@ -55,8 +64,17 @@ export function CandidateForm({
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">
+            <label
+              htmlFor="lastName"
+              className="mb-2 flex items-center text-sm font-medium text-foreground"
+            >
               Last name
+              <span
+                className="text-destructive ml-0.5 text-xs"
+                aria-hidden="true"
+              >
+                *
+              </span>
             </label>
             <input
               className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
@@ -71,8 +89,17 @@ export function CandidateForm({
 
         {/* Email */}
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-foreground">
-            Email address
+          <label
+            htmlFor="lastName"
+            className="mb-2 flex items-center text-sm font-medium text-foreground"
+          >
+            Email
+            <span
+              className="text-destructive ml-0.5 text-xs"
+              aria-hidden="true"
+            >
+              *
+            </span>
           </label>
           <input
             type="email"
@@ -85,8 +112,17 @@ export function CandidateForm({
 
         {/* Password */}
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-foreground">
+          <label
+            htmlFor="lastName"
+            className="mb-2 flex items-center text-sm font-medium text-foreground"
+          >
             Password
+            <span
+              className="text-destructive ml-0.5 text-xs"
+              aria-hidden="true"
+            >
+              *
+            </span>
           </label>
           <input
             type="password"
@@ -101,8 +137,17 @@ export function CandidateForm({
 
         {/* Confirm Password */}
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-foreground">
-            Confirm password
+          <label
+            htmlFor="lastName"
+            className="mb-2 flex items-center text-sm font-medium text-foreground"
+          >
+            Confirm password{" "}
+            <span
+              className="text-destructive ml-0.5 text-xs"
+              aria-hidden="true"
+            >
+              *
+            </span>
           </label>
           <input
             type="password"

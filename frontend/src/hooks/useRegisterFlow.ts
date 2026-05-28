@@ -7,7 +7,7 @@ export function useRegisterFlow() {
   const [step, setStep] = useState<RegisterStep>("select-type");
   const [accountType, setAccountType] = useState<AccountType>(null);
 
-  const [isRegistered, setIsRegistered] = useState(false); // ADD THIS
+  const [isRegistered, setIsRegistered] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,8 +38,8 @@ export function useRegisterFlow() {
 
   const progress: RegisterProgressState = {
     accountTypeSelected: accountType !== null,
-    isRegistered: false, // we’ll wire this in Step 3
-    profileCompleted: false, // not handled in this hook yet
+    isRegistered, // ✅ wired up — was hardcoded false before
+    profileCompleted: false, // handled in OnboardingPage
   };
 
   return {

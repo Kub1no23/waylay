@@ -280,8 +280,17 @@ export default function RecruitingProfiles() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-sm font-medium text-foreground">
-                Role Title
+              <label
+                htmlFor="lastName"
+                className="mb-2 flex items-center text-sm font-medium text-foreground"
+              >
+                Position Title
+                <span
+                  className="text-destructive ml-0.5 text-xs"
+                  aria-hidden="true"
+                >
+                  *
+                </span>
               </label>
               <input
                 value={form.title}
@@ -349,8 +358,17 @@ export default function RecruitingProfiles() {
 
           {/* DEBOUNCED AUTOFILL INPUT COMPONENT */}
           <div className="relative">
-            <label className="mb-1.5 block text-sm font-medium text-foreground">
-              Assign Matching System Flags
+            <label
+              htmlFor="lastName"
+              className="mb-2 flex items-center text-sm font-medium text-foreground"
+            >
+              Necessary Skills
+              <span
+                className="text-destructive ml-0.5 text-xs"
+                aria-hidden="true"
+              >
+                *
+              </span>
             </label>
             <div className="relative flex items-center">
               <Search className="absolute left-3 size-4 text-muted-foreground" />

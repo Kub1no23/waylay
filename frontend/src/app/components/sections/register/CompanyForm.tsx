@@ -40,8 +40,17 @@ export function CompanyForm({
 
         {/* Company name */}
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-foreground">
+          <label
+            htmlFor="lastName"
+            className="mb-2 flex items-center text-sm font-medium text-foreground"
+          >
             Company name
+            <span
+              className="text-destructive ml-0.5 text-xs"
+              aria-hidden="true"
+            >
+              *
+            </span>
           </label>
           <input
             className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
@@ -53,8 +62,17 @@ export function CompanyForm({
 
         {/* Email */}
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-foreground">
+          <label
+            htmlFor="lastName"
+            className="mb-2 flex items-center text-sm font-medium text-foreground"
+          >
             Email
+            <span
+              className="text-destructive ml-0.5 text-xs"
+              aria-hidden="true"
+            >
+              *
+            </span>
           </label>
           <input
             type="email"
@@ -67,8 +85,17 @@ export function CompanyForm({
 
         {/* Password */}
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-foreground">
+          <label
+            htmlFor="lastName"
+            className="mb-2 flex items-center text-sm font-medium text-foreground"
+          >
             Password
+            <span
+              className="text-destructive ml-0.5 text-xs"
+              aria-hidden="true"
+            >
+              *
+            </span>
           </label>
           <input
             type="password"
@@ -83,8 +110,17 @@ export function CompanyForm({
 
         {/* Confirm Password */}
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-foreground">
+          <label
+            htmlFor="lastName"
+            className="mb-2 flex items-center text-sm font-medium text-foreground"
+          >
             Confirm password
+            <span
+              className="text-destructive ml-0.5 text-xs"
+              aria-hidden="true"
+            >
+              *
+            </span>
           </label>
           <input
             type="password"

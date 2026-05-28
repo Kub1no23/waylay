@@ -6,7 +6,6 @@ import { API } from "../../../../api/auth";
 import { Button } from "../../../components/ui/Button";
 import { Save, Loader2, Check } from "lucide-react";
 import type { CandidateFormData } from "../../../../libs/types";
-// import { SanitizePayload } from "../../../../api/sanitizePayload";
 
 // This single line copies CandidateFormData and strips the password fields.
 type CandidateProfileState = Omit<
@@ -178,9 +177,15 @@ export default function CandidateAccount() {
             <div>
               <label
                 htmlFor="firstName"
-                className="mb-2 block text-sm font-medium text-foreground"
+                className="mb-2 flex items-center text-sm font-medium text-foreground"
               >
                 First Name
+                <span
+                  className="text-destructive ml-0.5 text-xs"
+                  aria-hidden="true"
+                >
+                  *
+                </span>
               </label>
               <input
                 id="firstName"
@@ -198,9 +203,15 @@ export default function CandidateAccount() {
             <div>
               <label
                 htmlFor="lastName"
-                className="mb-2 block text-sm font-medium text-foreground"
+                className="mb-2 flex items-center text-sm font-medium text-foreground"
               >
                 Last Name
+                <span
+                  className="text-destructive ml-0.5 text-xs"
+                  aria-hidden="true"
+                >
+                  *
+                </span>
               </label>
               <input
                 id="lastName"
