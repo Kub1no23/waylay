@@ -195,36 +195,87 @@ export default function ChatsMessages({ chatInfo }: { chatInfo: ChatInfo }) {
   }, [user]);
 
   return (
-    <div className="chat-messages">
-      <div>Selected Chat: {selectedChatInfo.otherUserName}</div>
-      {loading && <p>Loading messages...</p>}
-      {error && <p className="error">{error}</p>}
-      {!loading && !error && !chatHistory && <p>No messages.</p>}
-      {!loading && !error && chatHistory && (
-        <>
-          <ul>
-            {chatHistory.messages.map((m) => (
-              <li key={String(m.id)}>
-                <strong>
-                  {m.senderId === auth.userId
-                    ? `you`
-                    : `${selectedChatInfo.otherUserName}`}
-                </strong>
-                : {m.content}{" "}
-                <em>({new Date(m.createdAt).toLocaleString()})</em>
-              </li>
-            ))}
-          </ul>
-          <input
-            type="text"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-          />
-          <button onClick={handleSend} disabled={!message.trim()}>
-            Send Test Message
-          </button>
-        </>
-      )}
+    /* FIXED: Added 'min-h-0' here to freeze the flex box boundary from expanding out of view bounds */
+    <div className="w-full h-full flex flex-col min-h-0 relative z-10 overflow-hidden">
+      {/* Main Message Stream Container */}
+      <div className="flex-1 overflow-y-auto p-10 space-y-6 bg-orange-50 max-h-[70vh]">
+        {loading && (
+          <p className="py-12 text-xs text-muted-foreground/50 text-center animate-pulse tracking-[0.2em] uppercase">
+            Loading messages...
+          </p>
+        )}
+        {error && (
+          <p className="py-6 text-sm text-destructive bg-destructive/10 text-center font-medium border border-destructive/15 rounded-xl">
+            {error}
+          </p>
+        )}
+        {!loading &&
+          !error &&
+          (!chatHistory || chatHistory.messages.length === 0) && (
+            <p className="py-12 text-sm text-muted-foreground/45 text-center tracking-wide">
+              No messages yet. Start the conversation below.
+            </p>
+          )}
+
+        {!loading &&
+          !error &&
+          chatHistory &&
+          chatHistory.messages.length > 0 && (
+            <div className="space-y-4">
+              {chatHistory.messages.map((m) => {
+                const isMe = Number(m.senderId) === Number(auth.userId);
+                console.log({
+                  senderId: m.senderId,
+                  userId: auth.userId,
+                  isMe,
+                });
+                return (
+                  <div
+                    key={String(m.id)}
+                    className={`flex flex-col max-w-[75%] ${isMe ? "ml-auto items-end" : "mr-auto items-start"}`}
+                  >
+                    <div
+                      className={`rounded-2xl px-5 py-3 text-sm leading-relaxed tracking-wide shadow-sm transition-all ${
+                        isMe
+                          ? "bg-primary text-primary-foreground rounded-tr-none font-medium"
+                          : "bg-muted/60 border border-border/20 text-foreground rounded-tl-none"
+                      }`}
+                    >
+                      {m.content}
+                    </div>
+                    <span className="text-[10px] text-muted-foreground/45 mt-1.5 font-medium tracking-normal px-1">
+                      {new Date(m.createdAt).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+      </div>
+
+      {/* Footer Message Input Tray - Always Rendered */}
+      <div className="px-10 py-6 border-t border-border/30 bg-muted flex gap-4 items-center shrink-0 rounded-b-2xl">
+        <input
+          type="text"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="Write your message..."
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && message.trim()) handleSend();
+          }}
+          className="flex-1 min-w-0 rounded-xl border border-border bg-background px-4 py-3.5 text-sm placeholder:text-muted-foreground/45 text-foreground transition-all focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+        />
+        <button
+          onClick={handleSend}
+          disabled={!message.trim()}
+          className="inline-flex items-center justify-center rounded-xl bg-accent cursor-pointer px-6 py-3.5 text-sm font-semibold text-primary-foreground tracking-wide transition-all hover:bg-accent/80 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-30 whitespace-nowrap"
+        >
+          Send
+        </button>
+      </div>
     </div>
   );
 }

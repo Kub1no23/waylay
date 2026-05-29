@@ -300,29 +300,6 @@ export default function CandidateJobProfile() {
             />
           </div>
 
-          {/* Headline */}
-          <div>
-            <label
-              htmlFor="headline"
-              className="mb-2 block text-sm font-medium text-foreground"
-            >
-              Headline
-            </label>
-            <input
-              id="headline"
-              type="text"
-              value={profile.headline}
-              onChange={(e) =>
-                setProfile((prev) => ({ ...prev, headline: e.target.value }))
-              }
-              className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring/20 shadow-sm"
-              placeholder="e.g., Building scalable web applications with React and TypeScript"
-            />
-            <p className="mt-2 text-xs text-muted-foreground">
-              A short tagline that appears below your name
-            </p>
-          </div>
-
           {/* Summary */}
           <div>
             <label

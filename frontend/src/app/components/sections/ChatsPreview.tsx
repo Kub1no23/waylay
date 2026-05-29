@@ -162,49 +162,97 @@ export default function ChatsPreview() {
   }, [user]);
 
   return (
-    <div className="chats-preview">
-      <h2>Chats Preview</h2>
-      <p>This is where the chats preview will be displayed.</p>
+    <div className="w-full h-screen flex flex-col bg-background overflow-hidden relative z-10">
+      {/* DYNAMIC HEADER */}
       {!displayChat ? (
-        <section>
-          {loading && <p>Loading chats...</p>}
-          {error && <p className="error">{error}</p>}
+        /* Standard Blue Header (When looking at previews) */
+        <div className="px-10 py-4 bg-primary shrink-0 border-primary/10 rounded-t-2xl">
+          <p className="text-l text-primary-foreground font-normal">
+            Select a conversation to continue.
+          </p>
+        </div>
+      ) : (
+        /* Gray Header (When a chat is actively opened) */
+        <div className="rounded-t-2xl px-10 py-4 bg-muted border-b border-border/40 flex items-center justify-between shrink-0">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-xl font-bold tracking-tight text-foreground">
+              {selectedChatInfo?.otherUserName}
+            </h2>
+            {/* Status indicator */}
+            <div className="flex items-center gap-1.5">
+              <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-xs text-muted-foreground font-medium">
+                Connected
+              </span>
+            </div>
+          </div>
+
+          <button
+            onClick={() => {
+              setDisplayChat(false);
+              setSelectedChatInfo(null);
+            }}
+            className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg text-muted-foreground hover:text-foreground bg-border/40 hover:bg-border/80 transition-all cursor-pointer"
+          >
+            ← Back to Previews
+          </button>
+        </div>
+      )}
+
+      {/* BODY CONTENT */}
+      {!displayChat ? (
+        <section className="flex-1 divide-y divide-border/30 overflow-y-auto">
+          {loading && (
+            <p className="py-20 text-xs text-muted-foreground/50 text-center animate-pulse tracking-[0.2em] uppercase">
+              Loading chats...
+            </p>
+          )}
+          {error && (
+            <p className="py-20 text-sm text-destructive bg-destructive/10 text-center font-medium border border-destructive/15 rounded-xl mx-10 mt-8">
+              {error}
+            </p>
+          )}
           {!loading && !error && chatsPreview.length === 0 && (
-            <p>No chats found.</p>
+            <p className="py-24 text-sm text-muted-foreground/45 text-center tracking-wide">
+              No active chats found.
+            </p>
           )}
           {!loading && !error && chatsPreview.length > 0 && (
-            <ul>
+            <ul className="divide-y divide-border/30 border border-primary">
               {chatsPreview.map((chat: ChatPreview) => (
                 <li
                   key={chat.chatId}
                   onClick={() => handleChatClick(chat.chatId)}
+                  className="px-10 py-6 hover:bg-muted/25 transition-all duration-150 cursor-pointer block group text-left"
                 >
-                  <p>
-                    {chat.otherUserName} : {chat.role}
+                  <div className="flex items-center justify-between gap-4 mb-2">
+                    <span className="text-base font-semibold text-foreground group-hover:text-primary transition-colors">
+                      {chat.otherUserName}{" "}
+                    </span>
+                    <span className="text-xs text-accent font-semibold whitespace-nowrap tracking-wide">
+                      {new Date(chat.updatedAt).toLocaleDateString([], {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground/60 truncate line-clamp-1 pr-4">
+                    {chat.latestMessage
+                      ? chat.latestMessage.content
+                      : "No messages yet."}
                   </p>
-                  {chat.latestMessage ? (
-                    <p>{chat.latestMessage.content}</p>
-                  ) : (
-                    <p>No messages yet.</p>
-                  )}
-                  <p>{new Date(chat.updatedAt).toLocaleString()}</p>
                 </li>
               ))}
             </ul>
           )}
         </section>
       ) : (
-        <>
-          <div
-            onClick={() => {
-              setDisplayChat(false);
-              setSelectedChatInfo(null);
-            }}
-          >
-            Back to Previews
+        /* FIXED: Added min-h-0 and h-full here to stop container collapse / bleed overflow */
+        <div className="flex flex-col flex-1 min-h-0 h-full overflow-hidden">
+          <div className="flex-1 min-h-0 h-full overflow-hidden">
+            <ChatsMessages chatInfo={selectedChatInfo!} />
           </div>
-          <ChatsMessages chatInfo={selectedChatInfo!} />
-        </>
+        </div>
       )}
     </div>
   );

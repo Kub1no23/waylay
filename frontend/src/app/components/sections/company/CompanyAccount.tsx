@@ -128,7 +128,10 @@ export default function CompanyAccount() {
 
   return (
     <ScrollArea className="h-full">
-      <div className="p-4 lg:p-6">
+      {/* FIXED: Added 'relative z-10' here to pull the view layers above 
+        the parent absolute background layout mesh.
+      */}
+      <div className="relative z-10 p-4 lg:p-6">
         <div className="mx-auto max-w-2xl space-y-6">
           {errorMsg && (
             <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive font-medium">

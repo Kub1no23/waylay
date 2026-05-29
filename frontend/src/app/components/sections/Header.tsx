@@ -13,7 +13,7 @@ export default function Header() {
         <div className="flex lg:flex-1">
           <Link to="/" className="-m-1.5 p-1.5">
             <span className="font-sans text-2xl font-bold tracking-tight text-primary">
-              WayLay
+              WAYLAY
             </span>
           </Link>
         </div>

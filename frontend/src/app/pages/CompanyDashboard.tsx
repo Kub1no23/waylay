@@ -70,35 +70,52 @@ export default function CompanyDashboard() {
       unreadCount={unreadCount}
       onLogout={auth.logout}
     >
-      <div className="min-h-[calc(100vh-3rem)] bg-background p-4 md:p-6">
-        <div className="mb-4 text-sm font-semibold text-foreground">
-          {SECTION_TITLES[activeSection]}
+      <div className="min-h-screen w-full bg-white relative">
+        {/*  Diagonal Cross Top Left Fade Grid Background */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `
+        linear-gradient(45deg, transparent 49%, #e5e7eb 49%, #e5e7eb 51%, transparent 51%),
+        linear-gradient(-45deg, transparent 49%, #e5e7eb 49%, #e5e7eb 51%, transparent 51%)
+      `,
+            backgroundSize: "40px 40px",
+            WebkitMaskImage:
+              "radial-gradient(ellipse 80% 80% at 100% 0%, #000 50%, transparent 90%)",
+            maskImage:
+              "radial-gradient(ellipse 80% 80% at 100% 0%, #000 50%, transparent 90%)",
+          }}
+        />
+        <div className="min-h-[calc(100vh-3rem)] bg-background p-4 md:p-6">
+          <div className="mb-4 text-sm font-semibold text-foreground relative z-10">
+            {SECTION_TITLES[activeSection]}
+          </div>
+
+          <main className="flex-1 overflow-auto">
+            {activeSection === "search" && (
+              <CandidateSearch
+                onInterested={handleInterested}
+                interestedIds={interestedIds}
+              />
+            )}
+
+            {activeSection === "inbox" && (
+              <CompanyInbox onOpenChat={() => setActiveSection("chats")} />
+            )}
+
+            {activeSection === "chats" && <ChatsPreview />}
+
+            {activeSection === "job-offers" && (
+              <div className="mx-auto max-w-2xl">
+                <RecruitingProfiles />
+              </div>
+            )}
+
+            {activeSection === "profile" && <CompanyAccount />}
+
+            {activeSection === "settings" && <CompanySettings />}
+          </main>
         </div>
-
-        <main className="flex-1 overflow-auto">
-          {activeSection === "search" && (
-            <CandidateSearch
-              onInterested={handleInterested}
-              interestedIds={interestedIds}
-            />
-          )}
-
-          {activeSection === "inbox" && (
-            <CompanyInbox onOpenChat={() => setActiveSection("chats")} />
-          )}
-
-          {activeSection === "chats" && <ChatsPreview />}
-
-          {activeSection === "job-offers" && (
-            <div className="mx-auto max-w-2xl">
-              <RecruitingProfiles />
-            </div>
-          )}
-
-          {activeSection === "profile" && <CompanyAccount />}
-
-          {activeSection === "settings" && <CompanySettings />}
-        </main>
       </div>
     </Sidebar>
   );

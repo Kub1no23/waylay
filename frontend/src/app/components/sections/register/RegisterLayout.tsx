@@ -9,7 +9,7 @@ export function RegisterLayout({ children }: { children: React.ReactNode }) {
           <div className="flex flex-1">
             <Link to="/" className="-m-1.5 p-1.5">
               <span className="font-sans text-2xl font-bold tracking-tight text-primary pointer">
-                WayLay
+                WAYLAY
               </span>
             </Link>
           </div>

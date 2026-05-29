@@ -86,15 +86,19 @@ function MatchBadge({ score }: { score: number }) {
   const color =
     score >= 90
       ? "bg-emerald-100 text-emerald-700"
-      : score >= 75
-        ? "bg-amber-100 text-amber-700"
-        : "bg-slate-100 text-slate-600";
+      : score >= 80
+        ? "bg-yellow-100 text-yellow-700"
+        : score >= 70
+          ? "bg-amber-100 text-amber-700"
+          : score >= 60
+            ? "bg-orange-100 text-orange-700"
+            : "bg-red-100 text-red-600";
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${color}`}
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-l font-semibold ${color}`}
     >
-      <Star className="size-3" />
+      <Star className="size-4" />
       {score}% match
     </span>
   );
@@ -522,7 +526,7 @@ export default function CandidateSearch({
                       variant={
                         interestedIds.includes(candidate.id)
                           ? "secondary"
-                          : "default"
+                          : "love"
                       }
                       // "Interested" button
                       onClick={() => handleInterested(candidate)}

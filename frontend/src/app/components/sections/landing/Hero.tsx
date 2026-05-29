@@ -3,7 +3,7 @@ import { Button } from "../../ui/Button";
 import { ArrowRight, Building2, Users } from "lucide-react";
 
 export default function Hero() {
-  return (
+  const content = (
     <section className="relative overflow-hidden">
       <div className="mx-auto max-w-7xl px-6 py-20 sm:py-28 lg:px-8 lg:py-32">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
@@ -141,5 +141,24 @@ export default function Hero() {
         </div>
       </div>
     </section>
+  );
+
+  return (
+    <div className="min-h-screen w-full bg-white relative">
+      {/* Circuit Board - Light Pattern */}
+      <div
+        className="absolute inset-0 z-0 pointer-events-none"
+        style={{
+          backgroundImage: `
+        repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(75, 85, 99, 0.08) 19px, rgba(75, 85, 99, 0.08) 20px, transparent 20px, transparent 39px, rgba(75, 85, 99, 0.08) 39px, rgba(75, 85, 99, 0.08) 40px),
+        repeating-linear-gradient(90deg, transparent, transparent 19px, rgba(75, 85, 99, 0.08) 19px, rgba(75, 85, 99, 0.08) 20px, transparent 20px, transparent 39px, rgba(75, 85, 99, 0.08) 39px, rgba(75, 85, 99, 0.08) 40px),
+        radial-gradient(circle at 20px 20px, rgba(55, 65, 81, 0.12) 2px, transparent 2px),
+        radial-gradient(circle at 40px 40px, rgba(55, 65, 81, 0.12) 2px, transparent 2px)
+      `,
+          backgroundSize: "40px 40px, 40px 40px, 40px 40px, 40px 40px",
+        }}
+      />
+      {content}
+    </div>
   );
 }

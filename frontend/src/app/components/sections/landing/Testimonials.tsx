@@ -26,71 +26,86 @@ const testimonials = [
 
 export default function Testimonials() {
   return (
-    <section id="testimonials" className="py-20 sm:py-28">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        {/* Section header */}
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="text-sm font-medium uppercase tracking-widest text-accent">
-            Success Stories
-          </p>
-          <h2 className="mt-3 font-sans text-3xl font-bold tracking-tight text-foreground sm:text-4xl text-balance">
-            Trusted by Leading Companies
-          </h2>
-          <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
-            See how businesses like yours are using WayLay to build exceptional
-            teams faster.
-          </p>
-        </div>
-
-        {/* Testimonials grid */}
-        <div className="mx-auto mt-16 max-w-5xl">
-          <div className="grid md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <div
-                key={index}
-                className="relative flex flex-col p-6 rounded-lg bg-card border border-border"
-              >
-                <Quote className="h-8 w-8 text-accent/40 mb-4" />
-                <blockquote className="flex-1">
-                  <p className="text-sm leading-relaxed text-muted-foreground">
-                    {`"${testimonial.quote}"`}
-                  </p>
-                </blockquote>
-                <div className="mt-6 pt-6 border-t border-border">
-                  <p className="font-semibold text-sm text-foreground">
-                    {testimonial.author}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {testimonial.title}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {testimonial.company}
-                  </p>
-                </div>
-              </div>
-            ))}
+    <div className="min-h-screen w-full bg-white relative text-gray-800">
+      {/* Circuit Board - Light Pattern */}
+      <div
+        className="absolute inset-0 z-0 pointer-events-none"
+        style={{
+          backgroundImage: `
+        repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(75, 85, 99, 0.08) 19px, rgba(75, 85, 99, 0.08) 20px, transparent 20px, transparent 39px, rgba(75, 85, 99, 0.08) 39px, rgba(75, 85, 99, 0.08) 40px),
+        repeating-linear-gradient(90deg, transparent, transparent 19px, rgba(75, 85, 99, 0.08) 19px, rgba(75, 85, 99, 0.08) 20px, transparent 20px, transparent 39px, rgba(75, 85, 99, 0.08) 39px, rgba(75, 85, 99, 0.08) 40px),
+        radial-gradient(circle at 20px 20px, rgba(55, 65, 81, 0.12) 2px, transparent 2px),
+        radial-gradient(circle at 40px 40px, rgba(55, 65, 81, 0.12) 2px, transparent 2px)
+      `,
+          backgroundSize: "40px 40px, 40px 40px, 40px 40px, 40px 40px",
+        }}
+      />
+      <section id="testimonials" className="py-20 sm:py-28">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          {/* Section header */}
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="text-sm font-medium uppercase tracking-widest text-accent">
+              Success Stories
+            </p>
+            <h2 className="mt-3 font-sans text-3xl font-bold tracking-tight text-foreground sm:text-4xl text-balance">
+              Trusted by Leading Companies
+            </h2>
+            <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
+              See how businesses like yours are using WayLay to build
+              exceptional teams faster.
+            </p>
           </div>
-        </div>
 
-        {/* Company logos placeholder */}
-        <div className="mx-auto mt-16 max-w-4xl">
-          <p className="text-center text-sm text-muted-foreground mb-8">
-            Trusted by HR teams at companies of all sizes
-          </p>
-          <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-6">
-            {["Meridian", "Northpoint", "Elevate", "Apex", "Summit"].map(
-              (company, index) => (
-                <span
+          {/* Testimonials grid */}
+          <div className="mx-auto mt-16 max-w-5xl">
+            <div className="grid md:grid-cols-3 gap-8">
+              {testimonials.map((testimonial, index) => (
+                <div
                   key={index}
-                  className="text-lg font-semibold text-muted-foreground/50 tracking-wide"
+                  className="relative flex flex-col p-6 rounded-lg bg-card border border-border"
                 >
-                  {company}
-                </span>
-              ),
-            )}
+                  <Quote className="h-8 w-8 text-accent/40 mb-4" />
+                  <blockquote className="flex-1">
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      {`"${testimonial.quote}"`}
+                    </p>
+                  </blockquote>
+                  <div className="mt-6 pt-6 border-t border-border">
+                    <p className="font-semibold text-sm text-foreground">
+                      {testimonial.author}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {testimonial.title}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {testimonial.company}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Company logos placeholder */}
+          <div className="mx-auto mt-16 max-w-4xl">
+            <p className="text-center text-sm text-muted-foreground mb-8">
+              Trusted by HR teams at companies of all sizes
+            </p>
+            <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-6">
+              {["Meridian", "Northpoint", "Elevate", "Apex", "Summit"].map(
+                (company, index) => (
+                  <span
+                    key={index}
+                    className="text-lg font-semibold text-muted-foreground/50 tracking-wide"
+                  >
+                    {company}
+                  </span>
+                ),
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 }

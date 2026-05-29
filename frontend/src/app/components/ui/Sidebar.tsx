@@ -255,13 +255,13 @@ export function Sidebar({
   );
 
   const sidebarContent = (
-    <div className="flex h-full flex-col p-4">
+    <div className="flex h-full flex-col p-4 relative z-10">
       <div className="mb-6 flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-primary-foreground font-semibold">
           W
         </div>
         <div>
-          <p className="text-sm font-semibold text-foreground">Waylay</p>
+          <p className="text-sm font-semibold text-foreground">WAYLAY</p>
           <p className="text-xs text-muted-foreground capitalize">
             {role} dashboard
           </p>
@@ -302,7 +302,7 @@ export function Sidebar({
         </div>
         <Button
           type="button"
-          variant="ghost"
+          variant="outline"
           size="sm"
           className="mt-4 w-full justify-center"
           onClick={onLogout}
@@ -317,7 +317,24 @@ export function Sidebar({
   return (
     <div className="h-screen bg-muted/30 text-sidebar-foreground md:flex">
       <aside className="hidden w-72 shrink-0 border-r border-border bg-sidebar text-sidebar-foreground md:flex md:flex-col">
-        {sidebarContent}
+        <div className="min-h-screen w-full bg-white relative">
+          {/*  Diagonal Cross Grid Bottom Background */}
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `
+        linear-gradient(45deg, transparent 49%, #e5e7eb 49%, #e5e7eb 51%, transparent 51%),
+        linear-gradient(-45deg, transparent 49%, #e5e7eb 49%, #e5e7eb 51%, transparent 51%)
+      `,
+              backgroundSize: "40px 40px",
+              WebkitMaskImage:
+                "radial-gradient(ellipse 100% 80% at 50% 100%, #000 50%, transparent 90%)",
+              maskImage:
+                "radial-gradient(ellipse 100% 80% at 50% 100%, #000 50%, transparent 90%)",
+            }}
+          />
+          {sidebarContent}
+        </div>
       </aside>
 
       <div className="flex flex-1 flex-col">
@@ -364,7 +381,7 @@ export function Sidebar({
           >
             <SheetHeader className="border-b border-border px-4 py-4">
               <div>
-                <SheetTitle>Waylay</SheetTitle>
+                <SheetTitle>WAYLAY</SheetTitle>
                 <SheetDescription>Navigation</SheetDescription>
               </div>
             </SheetHeader>

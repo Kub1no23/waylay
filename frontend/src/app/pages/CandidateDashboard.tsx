@@ -118,24 +118,42 @@ export default function CandidateDashboard() {
       unreadCount={unreadCount}
       onLogout={handleLogout} // Using corrected logout sequence handler
     >
-      <div className="min-h-[calc(100vh-3rem)] bg-background p-4 md:p-6">
-        <div className="mb-4 text-sm font-semibold text-foreground">
-          {SECTION_TITLES[activeSection]}
+      <div className="min-h-screen w-full bg-white relative">
+        {/*  Diagonal Cross Top Left Fade Grid Background */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `
+        linear-gradient(45deg, transparent 49%, #e5e7eb 49%, #e5e7eb 51%, transparent 51%),
+        linear-gradient(-45deg, transparent 49%, #e5e7eb 49%, #e5e7eb 51%, transparent 51%)
+      `,
+            backgroundSize: "40px 40px",
+            WebkitMaskImage:
+              "radial-gradient(ellipse 80% 80% at 100% 0%, #000 50%, transparent 90%)",
+            maskImage:
+              "radial-gradient(ellipse 80% 80% at 100% 0%, #000 50%, transparent 90%)",
+          }}
+        />
+
+        <div className="h-3 p-4 md:p-6 relative z-10">
+          <div className="mb-4 text-sm font-semibold text-foreground">
+            {SECTION_TITLES[activeSection]}
+          </div>
+
+          <main className="flex-1 overflow-auto">
+            {activeSection === "requests" && <CandidateInbox />}
+
+            {activeSection === "chats" && <ChatsPreview />}
+
+            {/* 👈 New matching profile section rendered directly under messaging groups */}
+            {activeSection === "job-profile" && <CandidateJobProfile />}
+
+            {/* 👈 Updated to point to CandidateAccount instead of legacy profile */}
+            {activeSection === "profile" && <CandidateAccount />}
+
+            {activeSection === "settings" && <CandidateSettings />}
+          </main>
         </div>
-
-        <main className="flex-1 overflow-auto">
-          {activeSection === "requests" && <CandidateInbox />}
-
-          {activeSection === "chats" && <ChatsPreview />}
-
-          {/* 👈 New matching profile section rendered directly under messaging groups */}
-          {activeSection === "job-profile" && <CandidateJobProfile />}
-
-          {/* 👈 Updated to point to CandidateAccount instead of legacy profile */}
-          {activeSection === "profile" && <CandidateAccount />}
-
-          {activeSection === "settings" && <CandidateSettings />}
-        </main>
       </div>
     </Sidebar>
   );

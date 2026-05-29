@@ -9,13 +9,12 @@ import {
   ArrowLeft,
   MapPin,
   Briefcase,
-  Globe,
   Heart,
   Star,
   Clock,
   GraduationCap,
   Building,
-  ExternalLink,
+  Tag,
 } from "lucide-react";
 
 interface WorkExperience {
@@ -34,16 +33,10 @@ interface Education {
 interface Candidate {
   id: string;
   name: string;
-  role: string;
   avatarUrl: string;
   headline: string;
-  location: string;
-  experience: string;
   matchScore: number;
-  remotePreference: string;
   availability: string;
-  summary: string;
-  skills: string[];
   workExperience: WorkExperience[];
   education: Education[];
   desiredRoles: string[];
@@ -52,6 +45,16 @@ interface Candidate {
   githubUrl: string;
   portfolioUrl: string;
   linkedinUrl: string;
+
+  // Database Properties
+  title?: string;
+  role?: string; // Fallback field
+  summary?: string;
+  location?: string;
+  remotePreference?: string;
+  yearsExperience?: number;
+  experience?: string | number; // Fallback field
+  flags?: string[];
 }
 
 interface CandidateProfileViewProps {
@@ -69,68 +72,105 @@ export default function CandidateProfileView({
   isInterested = false,
   onInterested,
 }: CandidateProfileViewProps) {
+  // 1. Safe parsing for variations between API/Database naming and legacy code
+  const displayTitle =
+    candidate.title || candidate.role || "Professional Candidate";
+
+  // Robustly extract years of experience from either numbers or text string fallbacks
+  const displayExperience = (() => {
+    if (
+      candidate.yearsExperience !== undefined &&
+      candidate.yearsExperience !== null
+    ) {
+      return `${candidate.yearsExperience} ${candidate.yearsExperience === 1 ? "year" : "years"} of experience`;
+    }
+    if (candidate.experience) {
+      return typeof candidate.experience === "number"
+        ? `${candidate.experience} years of experience`
+        : candidate.experience;
+    }
+    return null;
+  })();
+
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center gap-3 border-b border-border bg-background px-4 py-3 shrink-0">
-        <Button variant="ghost" size="sm" onClick={onClose}>
-          <ArrowLeft className="size-4" />
-          Back
+    <div className="w-full h-screen flex flex-col bg-background overflow-hidden">
+      {/* Header Panel */}
+      <div className="px-10 py-8 bg-primary shrink-0 border-b border-primary/10 flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight text-primary-foreground">
+            Candidate Profile
+          </h2>
+          <p className="text-sm text-primary-foreground/45 mt-1.5 font-normal">
+            Review detailed background information, flags, and qualifications.
+          </p>
+        </div>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={onClose}
+          className="font-semibold px-4 py-2"
+        >
+          <ArrowLeft className="size-4 mr-1.5" />
+          Back to Previews
         </Button>
       </div>
 
       <ScrollArea className="flex-1">
-        <div className="p-4 lg:p-6">
-          <div className="mx-auto max-w-2xl space-y-4">
-            {/* Hero */}
-            <div className="rounded-xl border border-border bg-card p-6">
+        <div className="p-10">
+          <div className="mx-auto max-w-3xl space-y-6">
+            {/* Hero Main Card */}
+            <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
               <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-4">
-                  <Avatar className="size-16 border border-border shrink-0">
+                <div className="flex items-start gap-5">
+                  <Avatar className="size-20 border border-border/60 shrink-0">
                     <AvatarImage src={candidate.avatarUrl} />
-                    <AvatarFallback className="bg-muted text-muted-foreground text-xl font-medium">
+                    <AvatarFallback className="bg-muted text-muted-foreground text-2xl font-bold">
                       {candidate.name?.[0] ?? "?"}
                     </AvatarFallback>
                   </Avatar>
 
                   <div>
-                    <h2 className="text-xl font-semibold text-foreground">
-                      {candidate.name}
+                    <h2 className="text-2xl font-bold text-foreground tracking-tight">
+                      {candidate.name || "Anonymous Candidate"}
                     </h2>
-                    <p className="text-sm font-medium text-primary mt-0.5">
-                      {candidate.role}
+
+                    {/* Always visible header token */}
+                    <p className="text-base font-semibold text-primary mt-0.5 tracking-wide">
+                      {displayTitle}
                     </p>
 
                     {candidate.headline && (
-                      <p className="text-sm text-muted-foreground mt-1 italic">
+                      <p className="text-sm text-muted-foreground mt-2 italic bg-muted/30 px-3 py-1.5 rounded-lg border border-border/20 inline-block">
                         "{candidate.headline}"
                       </p>
                     )}
 
-                    <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                    {/* Metadata Sub-Row */}
+                    <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs font-medium text-muted-foreground/80">
                       {candidate.location && (
-                        <span className="flex items-center gap-1">
-                          <MapPin className="size-3" />
+                        <span className="flex items-center gap-1.5">
+                          <MapPin className="size-3.5 text-primary/70" />
                           {candidate.location}
                         </span>
                       )}
 
-                      {candidate.experience && (
-                        <span className="flex items-center gap-1">
-                          <Briefcase className="size-3" />
-                          {candidate.experience}
+                      {displayExperience && (
+                        <span className="flex items-center gap-1.5">
+                          <Briefcase className="size-3.5 text-primary/70" />
+                          {displayExperience}
                         </span>
                       )}
 
                       {candidate.remotePreference && (
-                        <span className="flex items-center gap-1">
-                          <Building className="size-3" />
-                          {candidate.remotePreference}
+                        <span className="flex items-center gap-1.5">
+                          <Building className="size-3.5 text-primary/70" />
+                          {candidate.remotePreference} Preference
                         </span>
                       )}
 
                       {candidate.availability && (
-                        <span className="flex items-center gap-1">
-                          <Clock className="size-3" />
+                        <span className="flex items-center gap-1.5">
+                          <Clock className="size-3.5 text-primary/70" />
                           {candidate.availability}
                         </span>
                       )}
@@ -138,24 +178,25 @@ export default function CandidateProfileView({
                   </div>
                 </div>
 
-                {candidate.matchScore && (
-                  <div className="flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700 shrink-0">
-                    <Star className="size-3" />
-                    {candidate.matchScore}% match
+                {!!candidate.matchScore && (
+                  <div className="flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 text-xs font-bold text-amber-600 dark:text-amber-400 shrink-0 tracking-wide">
+                    <Star className="size-3.5 fill-current" />
+                    {candidate.matchScore}% Match
                   </div>
                 )}
               </div>
 
               {showInterest && (
-                <div className="mt-5 pt-4 border-t border-border flex gap-2">
+                <div className="mt-6 pt-5 border-t border-border/50 flex gap-2">
                   <Button
                     size="sm"
                     variant={isInterested ? "secondary" : "default"}
                     onClick={onInterested}
                     disabled={isInterested}
+                    className="font-semibold"
                   >
                     <Heart
-                      className={`size-4 ${isInterested ? "fill-current" : ""}`}
+                      className={`size-4 mr-1.5 ${isInterested ? "fill-current text-destructive" : ""}`}
                     />
                     {isInterested ? "Interest Sent" : "Mark Interested"}
                   </Button>
@@ -163,217 +204,111 @@ export default function CandidateProfileView({
               )}
             </div>
 
-            {/* About */}
+            {/* Profile Summary Block */}
             {candidate.summary && (
-              <div className="rounded-xl border border-border bg-card p-5">
-                <h3 className="text-sm font-semibold text-foreground mb-2">
-                  About
+              <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+                <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-muted-foreground/60 mb-3">
+                  Summary
                 </h3>
-                <p className="text-sm text-foreground/80 leading-relaxed">
+                <p className="text-sm text-foreground/80 leading-relaxed tracking-wide">
                   {candidate.summary}
                 </p>
               </div>
             )}
 
-            {/* Work Experience */}
-            {candidate.workExperience?.length > 0 && (
-              <div className="rounded-xl border border-border bg-card p-5">
-                <h3 className="text-sm font-semibold text-foreground mb-4">
-                  Work Experience
-                </h3>
-
-                <div className="space-y-4">
-                  {candidate.workExperience.map((exp, i) => (
-                    <div
-                      key={i}
-                      className={`flex gap-4 ${
-                        i < candidate.workExperience.length - 1
-                          ? "pb-4 border-b border-border"
-                          : ""
-                      }`}
-                    >
-                      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
-                        <Building className="size-4 text-muted-foreground" />
-                      </div>
-
-                      <div>
-                        <p className="text-sm font-medium text-foreground">
-                          {exp.title}
-                        </p>
-
-                        <p className="text-sm text-muted-foreground">
-                          {exp.company}
-                        </p>
-
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {exp.period}
-                        </p>
-
-                        {exp.description && (
-                          <p className="text-sm text-foreground/70 mt-1.5 leading-relaxed">
-                            {exp.description}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Education */}
-            {candidate.education?.length > 0 && (
-              <div className="rounded-xl border border-border bg-card p-5">
-                <h3 className="text-sm font-semibold text-foreground mb-4">
-                  Education
-                </h3>
-
-                <div className="space-y-3">
-                  {candidate.education.map((edu, i) => (
-                    <div key={i} className="flex gap-4">
-                      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
-                        <GraduationCap className="size-4 text-muted-foreground" />
-                      </div>
-
-                      <div>
-                        <p className="text-sm font-medium text-foreground">
-                          {edu.degree}
-                        </p>
-
-                        <p className="text-sm text-muted-foreground">
-                          {edu.school}
-                        </p>
-
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {edu.period}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Skills */}
-            {candidate.skills?.length > 0 && (
-              <div className="rounded-xl border border-border bg-card p-5">
-                <h3 className="text-sm font-semibold text-foreground mb-3">
-                  Skills
+            {/* Semantic Profile Flags / Tags Section */}
+            {candidate.flags && candidate.flags.length > 0 && (
+              <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+                <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-muted-foreground/60 mb-4 flex items-center gap-2">
+                  <Tag className="size-4 text-primary/70" />
+                  Profile Flags & Skills
                 </h3>
 
                 <div className="flex flex-wrap gap-2">
-                  {candidate.skills.map((skill: string) => (
+                  {candidate.flags.map((flag: string) => (
                     <span
-                      key={skill}
-                      className="rounded-md border border-border bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground"
+                      key={flag}
+                      className="rounded-lg border border-border/40 bg-muted/60 px-3 py-1.5 text-xs font-semibold text-foreground tracking-wide hover:bg-muted transition-colors"
                     >
-                      {skill}
+                      {flag}
                     </span>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Job Preferences */}
-            {(candidate.desiredRoles?.length > 0 ||
-              candidate.desiredIndustries?.length > 0 ||
-              candidate.salaryExpectation) && (
-              <div className="rounded-xl border border-border bg-card p-5">
-                <h3 className="text-sm font-semibold text-foreground mb-3">
-                  Job Preferences
-                </h3>
+            {/* Work Experience Stream */}
+            {candidate.workExperience &&
+              candidate.workExperience.length > 0 && (
+                <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+                  <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-muted-foreground/60 mb-4">
+                    Work Experience
+                  </h3>
 
-                <div className="space-y-2.5 text-sm">
-                  {candidate.desiredRoles?.length > 0 && (
-                    <div className="flex gap-2">
-                      <span className="text-muted-foreground w-28 shrink-0">
-                        Roles
-                      </span>
-                      <span className="text-foreground">
-                        {candidate.desiredRoles.join(", ")}
-                      </span>
-                    </div>
-                  )}
+                  <div className="space-y-4">
+                    {candidate.workExperience.map((exp, i) => (
+                      <div
+                        key={i}
+                        className={`flex gap-4 ${
+                          i < candidate.workExperience.length - 1
+                            ? "pb-4 border-b border-border/30"
+                            : ""
+                        }`}
+                      >
+                        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted border border-border/20">
+                          <Building className="size-4 text-muted-foreground/80" />
+                        </div>
 
-                  {candidate.desiredIndustries?.length > 0 && (
-                    <div className="flex gap-2">
-                      <span className="text-muted-foreground w-28 shrink-0">
-                        Industries
-                      </span>
-                      <span className="text-foreground">
-                        {candidate.desiredIndustries.join(", ")}
-                      </span>
-                    </div>
-                  )}
+                        <div>
+                          <p className="text-sm font-bold text-foreground tracking-tight">
+                            {exp.title}
+                          </p>
+                          <p className="text-sm font-medium text-muted-foreground/90 mt-0.5">
+                            {exp.company}
+                          </p>
+                          <p className="text-xs text-muted-foreground/60 mt-1 font-medium">
+                            {exp.period}
+                          </p>
 
-                  {candidate.salaryExpectation && (
-                    <div className="flex gap-2">
-                      <span className="text-muted-foreground w-28 shrink-0">
-                        Salary
-                      </span>
-                      <span className="text-foreground">
-                        {candidate.salaryExpectation}
-                      </span>
-                    </div>
-                  )}
+                          {exp.description && (
+                            <p className="text-sm text-foreground/70 mt-2 leading-relaxed tracking-wide">
+                              {exp.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Links */}
-            {(candidate.githubUrl ||
-              candidate.portfolioUrl ||
-              candidate.linkedinUrl) && (
-              <div className="rounded-xl border border-border bg-card p-5">
-                <h3 className="text-sm font-semibold text-foreground mb-3">
-                  Links
+            {/* Education Track */}
+            {candidate.education && candidate.education.length > 0 && (
+              <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+                <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-muted-foreground/60 mb-4">
+                  Education
                 </h3>
 
-                <div className="flex flex-col gap-2">
-                  {candidate.githubUrl && (
-                    <a
-                      href={candidate.githubUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 rounded-lg border border-border bg-background px-3 py-2.5 text-sm hover:bg-muted/50 transition-colors group"
-                    >
-                      <p>GitHub Icon {":("}</p>
-                      <span className="flex-1 text-foreground font-medium">
-                        GitHub
-                      </span>
-                      <ExternalLink className="size-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                    </a>
-                  )}
+                <div className="space-y-4">
+                  {candidate.education.map((edu, i) => (
+                    <div key={i} className="flex gap-4">
+                      <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted border border-border/20">
+                        <GraduationCap className="size-4 text-muted-foreground/80" />
+                      </div>
 
-                  {candidate.portfolioUrl && (
-                    <a
-                      href={candidate.portfolioUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 rounded-lg border border-border bg-background px-3 py-2.5 text-sm hover:bg-muted/50 transition-colors group"
-                    >
-                      <Globe className="size-4 text-muted-foreground shrink-0" />
-                      <span className="flex-1 text-foreground font-medium">
-                        Portfolio
-                      </span>
-                      <ExternalLink className="size-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                    </a>
-                  )}
-
-                  {candidate.linkedinUrl && (
-                    <a
-                      href={candidate.linkedinUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 rounded-lg border border-border bg-background px-3 py-2.5 text-sm hover:bg-muted/50 transition-colors group"
-                    >
-                      <ExternalLink className="size-4 text-muted-foreground shrink-0" />
-                      <span className="flex-1 text-foreground font-medium">
-                        LinkedIn
-                      </span>
-                      <ExternalLink className="size-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                    </a>
-                  )}
+                      <div>
+                        <p className="text-sm font-bold text-foreground tracking-tight">
+                          {edu.degree}
+                        </p>
+                        <p className="text-sm font-medium text-muted-foreground/90 mt-0.5">
+                          {edu.school}
+                        </p>
+                        <p className="text-xs text-muted-foreground/60 mt-1 font-medium">
+                          {edu.period}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

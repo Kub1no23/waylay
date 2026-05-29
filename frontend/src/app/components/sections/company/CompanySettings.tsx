@@ -141,7 +141,7 @@ export default function CompanySettings() {
     passwordForm.confirmPassword;
 
   return (
-    <div className="p-4 lg:p-6">
+    <div className="p-4 lg:p-6 relative z-10">
       <div className="mx-auto max-w-2xl space-y-6">
         <section className="rounded-xl border border-border bg-card p-5">
           <div className="mb-5">
